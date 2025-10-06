@@ -1,81 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { askAi } from '../services/api'; // Usar o nosso novo serviço
+import { Box, TextField, List, ListItem, ListItemText, Paper, Typography, CircularProgress, IconButton } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
 
-export default function Chat() {
-  const [messages, setMessages] = useState([]);
+function Chat() {
+  const [messages, setMessages] = useState([
+    { sender: 'ai', text: 'Olá! Adicione as suas transações e depois pergunte-me o que quiser sobre elas.' }
+  ]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  async function send() {
-    if (!input.trim()) return;
-    
-    const userMsg = { from: 'user', text: input };
-    setMessages(prev => [...prev, userMsg]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = { sender: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/ask-ai', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ message: input })
-      });
-      const data = await res.json();
-      setMessages(prev => [...prev, { from: 'ai', text: data.reply }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { from: 'ai', text: '❌ Erro ao conectar com o servidor.' }]);
+      // A CHAMADA À API AGORA É MUITO MAIS SIMPLES!
+      const response = await askAi(currentInput); 
+      const aiMessage = { sender: 'ai', text: response.data.answer };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (err) {
+      const errorMessage = { sender: 'ai', text: '❌ Erro de conexão. Verifique se o servidor backend está a correr.' };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  };
 
-  function handleKeyPress(e) {
-    if (e.key === 'Enter' && !loading) send();
-  }
-
+  // O resto do código JSX (a parte do return) pode permanecer exatamente igual
+  // ...
   return (
-    <div style={{ border: '1px solid #ccc', padding: 20, borderRadius: 8, backgroundColor: 'white' }}>
-      <h3>🤖 Assistente de Finanças</h3>
-      <div style={{ 
-        minHeight: 200, 
-        maxHeight: 300, 
-        overflowY: 'auto', 
-        border: '1px solid #ddd', 
-        padding: 10, 
-        marginBottom: 10,
-        backgroundColor: '#fafafa'
-      }}>
-        {messages.length === 0 ? (
-          <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
-            Pergunta sobre poupanças, orçamentos, investimentos...
-          </p>
-        ) : (
-          messages.map((m, i) => (
-            <div key={i} style={{ 
-              marginBottom: 10, 
-              padding: 8,
-              backgroundColor: m.from === 'user' ? '#e3f2fd' : '#f3e5f5',
-              borderRadius: 8
-            }}>
-              <strong>{m.from === 'user' ? '👤 Tu: ' : '🤖 IA: '}</strong> 
-              {m.text}
-            </div>
-          ))
+    <Paper elevation={5} sx={{ height: '70vh', display: 'flex', flexDirection: 'column', borderRadius: '15px' }}>
+      <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+        {messages.map((msg, index) => (
+          <ListItem key={index} sx={{ justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                maxWidth: '70%',
+                bgcolor: msg.sender === 'user' ? 'primary.main' : 'background.paper',
+                color: msg.sender === 'user' ? 'primary.contrastText' : 'text.primary',
+                borderRadius: msg.sender === 'user' ? '20px 5px 20px 20px' : '5px 20px 20px 20px',
+                border: msg.sender === 'ai' ? '1px solid #424242' : 'none',
+              }}
+            >
+              <ListItemText primaryTypographyProps={{ style: { whiteSpace: "pre-wrap" } }} primary={msg.text} />
+            </Paper>
+          </ListItem>
+        ))}
+        {isLoading && (
+          <ListItem sx={{ justifyContent: 'flex-start' }}>
+            <CircularProgress size={24} sx={{color: 'text.secondary'}} />
+          </ListItem>
         )}
-        {loading && <div style={{ fontStyle: 'italic', color: '#666' }}>⏳ IA a pensar...</div>}
-      </div>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <input 
-          value={input} 
-          onChange={e => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Ex: Como poupar 100€ por mês?" 
-          style={{ flex: 1, padding: 10 }}
-          disabled={loading}
+        <div ref={messagesEndRef} />
+      </List>
+
+      <Box component="form" onSubmit={handleSend} sx={{ display: 'flex', p: 2, borderTop: '1px solid #424242' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Qual foi o meu maior gasto este mês?"
+          disabled={isLoading}
+          sx={{ mr: 1 }}
         />
-        <button onClick={send} disabled={loading} style={{ padding: '10px 20px' }}>
-          {loading ? '...' : 'Enviar'}
-        </button>
-      </div>
-    </div>
+        <IconButton type="submit" color="primary" disabled={isLoading}>
+          <SendIcon />
+        </IconButton>
+      </Box>
+    </Paper>
   );
 }
+
+export default Chat;
