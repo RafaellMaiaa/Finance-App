@@ -1,66 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Grid } from '@mui/material';
-import Chat from './components/Chat.jsx';
-import TransactionForm from './components/TransactionForm.jsx';
-import TransactionList from './components/TransactionList.jsx';
-import { getTransactions, addTransaction, deleteTransaction } from './services/api.js';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import VerifyLoginPage from './pages/VerifyLoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  const [transactions, setTransactions] = useState([]);
-
-  // Efeito para ir buscar as transações à API quando a app carrega
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await getTransactions();
-      setTransactions(response.data);
-    } catch (error) {
-      console.error('Erro ao obter transações:', error);
-    }
-  };
-
-  const handleAddTransaction = async (transaction) => {
-    try {
-      await addTransaction(transaction);
-      fetchTransactions(); // Atualiza a lista depois de adicionar
-    } catch (error) {
-      console.error('Erro ao adicionar transação:', error);
-    }
-  };
-
-  const handleDeleteTransaction = async (id) => {
-    try {
-      await deleteTransaction(id);
-      fetchTransactions(); // Atualiza a lista depois de apagar
-    } catch (error) {
-      console.error('Erro ao apagar transação:', error);
-    }
-  };
-
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }}>
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Painel de Finanças com IA
-        </Typography>
-      </Box>
+    <Routes>
+      {/* Rota para a página de login, acessível a todos */}
+      <Route path="/login" element={<LoginPage />} />
 
-      <Grid container spacing={4}>
-        {/* Coluna da Esquerda: Adicionar e Ver Transações */}
-        <Grid item xs={12} md={5}>
-          <TransactionForm onAddTransaction={handleAddTransaction} />
-          <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
-        </Grid>
+      {/* Rota para onde o utilizador é redirecionado a partir do email para verificar o token */}
+      <Route path="/verify-login" element={<VerifyLoginPage />} />
 
-        {/* Coluna da Direita: Chat com a IA */}
-        <Grid item xs={12} md={7}>
-          <Chat />
-        </Grid>
-      </Grid>
-    </Container>
+      {/* Rota principal ("/") que mostra o painel de finanças.
+          Está protegida pelo ProtectedRoute, que só permite o acesso a utilizadores com login. */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
 

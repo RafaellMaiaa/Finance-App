@@ -21,7 +21,9 @@ app.use('/api', aiRoutes);
 app.use('/api', transactionRoutes);
 
 console.log('--- As rotas de transações foram carregadas com sucesso! ---');
-
+app.get('/', (req, res) => {
+  res.send('<h1>A API está a funcionar e conectada à base de dados!</h1>');
+});
 // Conectar à Base de Dados MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {

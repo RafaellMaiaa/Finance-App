@@ -1,2 +1,4 @@
 "node_modules/" 
 ".env" 
+# Ignorar ficheiros de ambiente com segredos
+.env
