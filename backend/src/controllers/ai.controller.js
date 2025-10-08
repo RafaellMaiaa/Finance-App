@@ -1,7 +1,3 @@
-// =================================================================
-// CÓDIGO COMPLETO PARA: backend/src/controllers/ai.controller.js
-// =================================================================
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Transaction from '../models/transaction.model.js';
 
@@ -15,18 +11,13 @@ export const askAi = async (req, res) => {
       return res.status(400).json({ error: "A pergunta é obrigatória." });
     }
     
-    // PASSO 1 DE DEBUG: Ir buscar os dados financeiros à base de dados
-    const financialData = await Transaction.find().sort({ date: -1 }).limit(50);
+    // ✅ GARANTA QUE ESTA LINHA FILTRA PELO ID DO UTILIZADOR
+    const financialData = await Transaction.find({ user: req.user.id }).sort({ date: -1 }).limit(50);
 
-    // ✅ PASSO 2 DE DEBUG: A "CÂMARA DE VIGILÂNCIA"
-    // Vamos ver no terminal do backend o que foi encontrado na base de dados.
-    console.log('--- Dados Financeiros Encontrados na BD ---');
-    console.log(financialData);
-    console.log('-------------------------------------------');
+    // ... (resto do ficheiro permanece igual)
 
-    // Validação extra: Se não houver dados, informamos a IA.
     if (!financialData || financialData.length === 0) {
-      const answer = "Não encontrei quaisquer dados financeiros na base de dados para analisar. Por favor, adicione primeiro as suas transações.";
+      const answer = "Não encontrei quaisquer dados financeiros na sua conta para analisar. Por favor, adicione primeiro as suas transações.";
       return res.status(200).json({ answer });
     }
 
@@ -45,7 +36,7 @@ export const askAi = async (req, res) => {
 
     res.status(200).json({ answer: text });
   } catch (error) {
-    console.error("Erro ao comunicar com a API do Gemini ou DB:", error); // <-- A PISTA ESTÁ AQUI
+    console.error("Erro ao comunicar com a API do Gemini ou DB:", error);
     res.status(500).json({ error: "Ocorreu um erro ao processar o seu pedido." });
-}
+  }
 };

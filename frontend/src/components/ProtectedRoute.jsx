@@ -1,16 +1,23 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
+import { Box, CircularProgress } from '@mui/material';
 
 function ProtectedRoute({ children }) {
-  const { token } = useAuth();
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (!token) {
-    // Se não houver token, redireciona para a página de login
     return <Navigate to="/login" />;
   }
 
-  // Se houver token, mostra a página protegida
   return children;
 }
 

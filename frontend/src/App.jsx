@@ -1,28 +1,36 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import VerifyLoginPage from './pages/VerifyLoginPage';
-import DashboardPage from './pages/DashboardPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage.jsx';
+import VerifyLoginPage from './pages/VerifyLoginPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 function App() {
   return (
     <Routes>
-      {/* Rota para a página de login, acessível a todos */}
+      {/* Rotas públicas que não exigem login */}
       <Route path="/login" element={<LoginPage />} />
-
-      {/* Rota para onde o utilizador é redirecionado a partir do email para verificar o token */}
       <Route path="/verify-login" element={<VerifyLoginPage />} />
-
-      {/* Rota principal ("/") que mostra o painel de finanças.
-          Está protegida pelo ProtectedRoute, que só permite o acesso a utilizadores com login. */}
-      <Route
-        path="/"
+      
+      {/* Rota principal (Dashboard), protegida por login */}
+      <Route 
+        path="/" 
         element={
           <ProtectedRoute>
             <DashboardPage />
           </ProtectedRoute>
-        }
+        } 
+      />
+      
+      {/* Rota da página de Perfil, também protegida */}
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } 
       />
     </Routes>
   );

@@ -1,9 +1,10 @@
 import express from 'express';
-import { requestLoginLink, verifyLogin } from '../controllers/auth.controller.js';
+import { askAi } from '../controllers/ai.controller.js';
+import { protect } from '../middleware/auth.middleware.js'; // 1. Importar o nosso "segurança"
 
 const router = express.Router();
 
-router.post('/auth/login', requestLoginLink); // Agora pede o link
-router.post('/auth/verify', verifyLogin);   // Nova rota para verificar o link
+// 2. Colocar o "segurança" (protect) a guardar esta rota
+router.post('/ask-ai', protect, askAi);
 
 export default router;
