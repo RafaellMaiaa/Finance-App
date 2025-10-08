@@ -2,3 +2,5 @@
 ".env" 
 # Ignorar ficheiros de ambiente com segredos
 .env
+.env.local
+.env
