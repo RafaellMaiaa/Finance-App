@@ -1,24 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography } from '@mui/material';
+import { getCategories } from '../services/api.js'; // Importamos a função para ir buscar as categorias
 
 function TransactionForm({ onAddTransaction }) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('gasto');
-  const [category, setCategory] = useState('Outros');
+  
+  // O estado inicial da categoria pode ser uma string vazia
+  const [category, setCategory] = useState(''); 
+  // Novo estado para guardar a lista de categorias que vem da API
+  const [categoryList, setCategoryList] = useState([]);
+
+  // useEffect para ir buscar as categorias quando o componente é montado
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getCategories();
+        setCategoryList(response.data); // Guarda a lista de categorias no nosso estado
+      } catch (error) {
+        console.error("Erro ao obter categorias para o formulário:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []); // O array vazio [] significa que isto só corre uma vez
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!description || !amount) {
-      alert('Por favor, preencha a descrição e o montante.');
+    if (!description || !amount || !category) { // Agora a categoria também é obrigatória
+      alert('Por favor, preencha todos os campos.');
       return;
     }
     onAddTransaction({ description, amount: parseFloat(amount), type, category });
+    
     // Limpar o formulário
     setDescription('');
     setAmount('');
-    setCategory('Outros');
-    setType('gasto');
+    setCategory('');
   };
 
   return (
@@ -46,19 +65,20 @@ function TransactionForm({ onAddTransaction }) {
           <FormControlLabel value="ganho" control={<Radio />} label="Ganho" />
         </RadioGroup>
       </FormControl>
-       <FormControl fullWidth>
+       <FormControl fullWidth required>
         <InputLabel>Categoria</InputLabel>
         <Select
           value={category}
           label="Categoria"
           onChange={(e) => setCategory(e.target.value)}
         >
-          <MenuItem value="Alimentação">Alimentação</MenuItem>
-          <MenuItem value="Habitação">Habitação</MenuItem>
-          <MenuItem value="Transporte">Transporte</MenuItem>
-          <MenuItem value="Lazer">Lazer</MenuItem>
-          <MenuItem value="Salário">Salário</MenuItem>
-          <MenuItem value="Outros">Outros</MenuItem>
+          {/* ✅ DROPDOWN DINÂMICO AQUI ✅ */}
+          {/* Criamos um MenuItem para cada categoria na nossa lista */}
+          {categoryList.map((cat) => (
+            <MenuItem key={cat._id} value={cat.name}>
+              {cat.name}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
       <Button type="submit" variant="contained" color="primary">

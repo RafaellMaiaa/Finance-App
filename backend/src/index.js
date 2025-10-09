@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import passport from 'passport'; // Importar o passport
 import './config/passport.js'; // Importar e executar a nossa configuração do passport
 import aiRoutes from './routes/ai.routes.js';
+import categoryRoutes from './routes/category.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js'; 
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 });
 
 // Rotas da API
+app.use('/api', categoryRoutes);
 app.use('/api', authRoutes);
 app.use('/api', userRoutes); // ✅ Adicionar esta linha
 app.use('/api', aiRoutes);

@@ -1,39 +1,24 @@
-// =================================================================
-// CÓDIGO COMPLETO PARA: backend/src/models/transaction.model.js
-// =================================================================
-
 import mongoose from 'mongoose';
 
-// Este é o Schema, a estrutura dos seus dados
 const transactionSchema = new mongoose.Schema({
-  description: {
-    type: String,
-    required: true, // Obrigatório ter uma descrição
-    trim: true,     // Remove espaços em branco no início e no fim
-  },
-  amount: {
-    type: Number,
-    required: true, // Obrigatório ter um montante
-  },
-  type: {
-    type: String,
-    required: true,
-    enum: ['ganho', 'gasto'], // O tipo só pode ser 'ganho' ou 'gasto'
-  },
-  category: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  date: {
-    type: Date,
-    default: Date.now, // Se não for especificada, a data é a de agora
-  },
+  description: { type: String, required: true, trim: true },
+  amount: { type: Number, required: true },
+  type: { type: String, required: true, enum: ['ganho', 'gasto'] },
+  category: { type: String, required: true, trim: true },
+  date: { type: Date, default: Date.now },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
 
-// A partir do Schema, criamos o Model, que é o que nos permite
-// interagir com a coleção de 'transactions' na base de dados.
+// ✅✅✅ O NOSSO "ESPIÃO" ✅✅✅
+transactionSchema.pre('save', function(next) {
+  console.log('\n--- MONGOOSE PRE-SAVE HOOK ---');
+  console.log('Documento prestes a ser guardado:', this);
+  if (!this.user) {
+    console.error('ALERTA DO PRE-SAVE: O campo "user" está em falta ANTES de guardar!');
+  }
+  next();
+});
+
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
-// Exportamos o Model para que outros ficheiros (como o controller) o possam usar.
 export default Transaction;

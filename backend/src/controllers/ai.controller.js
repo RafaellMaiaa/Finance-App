@@ -10,11 +10,41 @@ export const askAi = async (req, res) => {
     if (!question) {
       return res.status(400).json({ error: "A pergunta é obrigatória." });
     }
-    
-    // ✅ GARANTA QUE ESTA LINHA FILTRA PELO ID DO UTILIZADOR
-    const financialData = await Transaction.find({ user: req.user.id }).sort({ date: -1 }).limit(50);
 
-    // ... (resto do ficheiro permanece igual)
+    // ✅✅✅ A NOSSA NOVA "REGRA ESPECIAL" COMEÇA AQUI ✅✅✅
+
+    // Convertemos a pergunta para minúsculas para a verificação ser mais fiável
+    const lowerCaseQuestion = question.toLowerCase();
+
+    // Verificamos se a pergunta contém palavras-chave sobre o criador
+    if (
+      lowerCaseQuestion.includes('quem te criou') ||
+      lowerCaseQuestion.includes('quem te fez') ||
+      lowerCaseQuestion.includes('quem é o criador') ||
+      lowerCaseQuestion.includes('quem te desenvolveu') ||
+      lowerCaseQuestion.includes('criador do site') ||
+      lowerCaseQuestion.includes('criador da app')
+    ) {
+      // Se for uma pergunta sobre o criador, respondemos diretamente
+      const creatorResponse = "Fui criado pelo Rafael Maia. Ele é o desenvolvedor por trás desta aplicação.";
+      
+      // Enviamos a resposta e terminamos a função aqui, sem ir ao Gemini
+      return res.status(200).json({ answer: creatorResponse });
+    }
+
+    // ✅✅✅ FIM DA "REGRA ESPECIAL" ✅✅✅
+     if (
+      // ... (condições iguais)
+      lowerCaseQuestion.includes('criador do site') ||
+      lowerCaseQuestion.includes('criador da app')
+    ) {
+      // ✅ Resposta Atualizada
+      const creatorResponse = "Fui criado pelo Rafael Maia como parte da aplicação Finance Flow.";
+      return res.status(200).json({ answer: creatorResponse });
+    }
+    // Se a pergunta não for sobre o criador, o código continua como antes...
+
+    const financialData = await Transaction.find({ user: req.user._id }).sort({ date: -1 }).limit(50);
 
     if (!financialData || financialData.length === 0) {
       const answer = "Não encontrei quaisquer dados financeiros na sua conta para analisar. Por favor, adicione primeiro as suas transações.";

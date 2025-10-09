@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js'; // ✅ O caminho foi corrigido aqui
+import { useAuth } from '../hooks/useAuth.js';
 import { Box, CircularProgress } from '@mui/material';
 
 function ProtectedRoute({ children }) {

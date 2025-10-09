@@ -11,24 +11,21 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Esta função corre apenas uma vez quando a App é carregada ou a página é atualizada
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         setToken(storedToken);
-        setAuthToken(storedToken); // Configura o axios logo no início
+        setAuthToken(storedToken);
         try {
           const res = await getUserProfile();
           setUser(res.data);
         } catch (err) {
-          // Se o token guardado for inválido, limpa tudo
           localStorage.removeItem('token');
           setAuthToken(null);
         }
       }
       setLoading(false);
     };
-
     initializeAuth();
   }, []);
 
