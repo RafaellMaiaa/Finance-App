@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel } from '@mui/material';
+import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography } from '@mui/material';
 
 function TransactionForm({ onAddTransaction }) {
   const [description, setDescription] = useState('');
@@ -17,6 +17,8 @@ function TransactionForm({ onAddTransaction }) {
     // Limpar o formulário
     setDescription('');
     setAmount('');
+    setCategory('Outros');
+    setType('gasto');
   };
 
   return (
@@ -65,7 +67,5 @@ function TransactionForm({ onAddTransaction }) {
     </Box>
   );
 }
-// Adicione esta linha no início do ficheiro, depois dos imports.
-import { Typography } from '@mui/material';
 
 export default TransactionForm;

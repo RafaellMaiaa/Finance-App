@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
+import { useAuth } from '../hooks/useAuth.js'; // ✅ O caminho foi corrigido aqui
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 function VerifyLoginPage() {

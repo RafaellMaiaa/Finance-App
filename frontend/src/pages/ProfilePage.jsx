@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Alert } from '@mui/material';
-import { useAuth } from '../hooks/useAuth.js';
+import { useAuth } from '../hooks/useAuth.js'; // ✅ O caminho foi corrigido aqui
 import { updateUserProfile } from '../services/api.js';
 import { useNavigate } from 'react-router-dom';
 

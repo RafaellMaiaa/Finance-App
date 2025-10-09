@@ -3,7 +3,7 @@ import { List, ListItem, ListItemText, IconButton, Paper, Typography, Box } from
 import DeleteIcon from '@mui/icons-material/Delete';
 
 function TransactionList({ transactions, onDeleteTransaction }) {
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography>Ainda não há transações. Adicione uma para começar!</Typography>

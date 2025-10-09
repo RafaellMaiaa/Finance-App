@@ -1,7 +1,10 @@
 import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext.jsx'; // Importa o contexto
+import { AuthContext } from '../context/AuthContext.jsx';
 
-// Esta é a nossa ferramenta, agora no seu próprio ficheiro.
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

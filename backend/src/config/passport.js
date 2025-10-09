@@ -11,22 +11,22 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Agora procuramos pelo ID do Google para ser mais robusto
         let user = await User.findOne({ googleId: profile.id });
 
         if (user) {
           return done(null, user);
         } else {
-          // Se o utilizador não existe, verificamos se o email já está em uso
           user = await User.findOne({ email: profile.emails[0].value });
           if (user) {
+            // Se o email já existe mas não tem googleId, atualiza o utilizador
+            user.googleId = profile.id;
+            await user.save();
             return done(null, user);
           }
           
-          // Se for mesmo um novo utilizador, criamo-lo com os dados do Google
           const newUser = await User.create({
             googleId: profile.id,
-            name: profile.displayName, // Capturamos o nome do perfil do Google
+            name: profile.displayName,
             email: profile.emails[0].value,
           });
           return done(null, newUser);

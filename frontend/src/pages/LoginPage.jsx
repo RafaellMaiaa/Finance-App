@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Box, Typography, Button } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google'; // Um ícone para o botão
-
+import { useAuth } from '../hooks/useAuth.js';
 // Este é o endereço do nosso backend que inicia o processo de login com o Google
 const GOOGLE_AUTH_URL = 'http://localhost:3001/api/auth/google';
 
