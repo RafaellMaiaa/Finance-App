@@ -6,7 +6,6 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Esta função adiciona o token de sessão a todos os pedidos futuros
 export const setAuthToken = (token) => {
   if (token) {
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -15,14 +14,25 @@ export const setAuthToken = (token) => {
   }
 };
 
-// Rotas de Autenticação
-export const requestLoginLink = (email) => apiClient.post('/auth/login', { email });
-export const verifyLoginToken = (token) => apiClient.post('/auth/verify', { token });
+// --- ROTAS DE UTILIZADOR ---
+export const getUserProfile = () => apiClient.get('/users/me');
+export const updateUserProfile = (userData) => apiClient.put('/users/me', userData);
 
-// Rotas de Transações (agora protegidas)
+// --- ROTAS DE TRANSAÇÕES ---
 export const getTransactions = () => apiClient.get('/transactions');
 export const addTransaction = (transaction) => apiClient.post('/transactions', transaction);
 export const deleteTransaction = (id) => apiClient.delete(`/transactions/${id}`);
 
-// Rota da IA (agora protegida)
+// --- ROTA DA IA ---
 export const askAi = (question) => apiClient.post('/ask-ai', { question });
+
+// --- ROTAS DE CATEGORIAS ---
+export const getCategories = () => apiClient.get('/categories');
+export const createCategory = (categoryData) => apiClient.post('/categories', categoryData);
+export const updateCategory = (id, categoryData) => apiClient.put(`/categories/${id}`, categoryData);
+export const deleteCategory = (id) => apiClient.delete(`/categories/${id}`);
+
+// --- ✅ NOVAS ROTAS DE ORÇAMENTOS ✅ ---
+export const getBudgets = (month, year) => apiClient.get(`/budgets?month=${month}&year=${year}`);
+export const setBudget = (budgetData) => apiClient.post('/budgets', budgetData);
+export const deleteBudget = (id) => apiClient.delete(`/budgets/${id}`);

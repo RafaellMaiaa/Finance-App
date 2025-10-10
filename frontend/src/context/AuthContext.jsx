@@ -1,39 +1,61 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { setAuthToken } from '../services/api';
+import React, { createContext, useState, useEffect } from 'react';
+import { setAuthToken, getUserProfile } from '../services/api.js';
 import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-      setAuthToken(token);
-    } else {
-      localStorage.removeItem('token');
-      setAuthToken(null);
-    }
-  }, [token]);
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
+        setAuthToken(storedToken);
+        try {
+          const res = await getUserProfile();
+          setUser(res.data);
+        } catch (err) {
+          localStorage.removeItem('token');
+          setAuthToken(null);
+        }
+      }
+      setLoading(false);
+    };
+    initializeAuth();
+  }, []);
 
-  const login = (newToken) => {
+  const login = async (newToken) => {
+    localStorage.setItem('token', newToken);
+    setAuthToken(newToken); 
     setToken(newToken);
+    try {
+      const res = await getUserProfile();
+      setUser(res.data);
+    } catch (err) {
+      logout();
+    }
   };
 
   const logout = () => {
     setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+    setAuthToken(null);
     navigate('/login');
+  };
+  
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ token, user, loading, login, logout, updateUser }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  return useContext(AuthContext);
 };

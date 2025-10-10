@@ -1,29 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Grid, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import {
+  Container, Typography, Box, Grid, AppBar, Toolbar, IconButton, Menu, MenuItem, Skeleton,
+  Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider, useTheme
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import SavingsIcon from '@mui/icons-material/Savings';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CategoryIcon from '@mui/icons-material/Category';
+import SettingsIcon from '@mui/icons-material/Settings';
+
 import Chat from '../components/Chat.jsx';
 import TransactionForm from '../components/TransactionForm.jsx';
 import TransactionList from '../components/TransactionList.jsx';
 import { getTransactions, addTransaction, deleteTransaction } from '../services/api.js';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth.js';
 
-function DashboardPage() {
+function DashboardPage({ toggleTheme }) {
   const [transactions, setTransactions] = useState([]);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const theme = useTheme();
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openUserMenu = Boolean(anchorEl);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleMenu = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+  const handleProfile = () => { navigate('/profile'); handleClose(); };
+  const handleDrawerToggle = () => setDrawerOpen(!drawerOpen);
+
+  const navigateTo = (path) => {
+    navigate(path);
+    setDrawerOpen(false);
+  };
 
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    if (user) fetchTransactions();
+    // eslint-disable-next-line
+  }, [user]);
 
   const fetchTransactions = async () => {
     try {
       const response = await getTransactions();
       setTransactions(response.data);
     } catch (error) {
-      console.error('Erro ao obter transações:', error);
-      // Se o token for inválido (erro 401), faz logout
-      if (error.response && error.response.status === 401) {
-        logout();
-      }
+      if (error.response && error.response.status === 401) logout();
     }
   };
 
@@ -45,25 +72,81 @@ function DashboardPage() {
     }
   };
 
-  return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold' }}>
-          Painel de Finanças
-        </Typography>
-        <Button variant="outlined" color="primary" onClick={logout}>Sair</Button>
-      </Box>
+  const drawerContent = (
+    <Box sx={{ width: 250 }} role="presentation">
+      <Toolbar />
+      <Divider />
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => navigateTo('/')}>
+            <ListItemIcon><DashboardIcon /></ListItemIcon>
+            <ListItemText primary="Painel Principal" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => navigateTo('/reports')}>
+            <ListItemIcon><BarChartIcon /></ListItemIcon>
+            <ListItemText primary="Relatórios" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => navigateTo('/categories')}>
+            <ListItemIcon><CategoryIcon /></ListItemIcon>
+            <ListItemText primary="Categorias" />
+          </ListItemButton>
+        </ListItem>
+      </List>
+      <Divider />
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => navigateTo('/settings')}>
+            <ListItemIcon><SettingsIcon /></ListItemIcon>
+            <ListItemText primary="Definições" />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </Box>
+  );
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={5}>
-          <TransactionForm onAddTransaction={handleAddTransaction} />
-          <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
-        </Grid>
-        <Grid item xs={12} md={7}>
-          <Chat />
-        </Grid>
-      </Grid>
-    </Container>
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed" elevation={1} sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
+        <Toolbar>
+          <IconButton color="inherit" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
+          <SavingsIcon color="primary" sx={{ mr: 1.5 }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>Finance Flow</Typography>
+          {toggleTheme && (
+            <IconButton onClick={toggleTheme} color="inherit">
+              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+          )}
+          {user ? (
+            <div>
+              <IconButton size="large" onClick={handleMenu} color="inherit"><AccountCircle /></IconButton>
+              <Menu anchorEl={anchorEl} open={openUserMenu} onClose={handleClose}>
+                <MenuItem onClick={handleProfile}>Editar Perfil</MenuItem>
+                <MenuItem onClick={logout}>Sair</MenuItem>
+              </Menu>
+            </div>
+          ) : (<Skeleton variant="circular" width={40} height={40} />)}
+        </Toolbar>
+      </AppBar>
+      <Drawer open={drawerOpen} onClose={handleDrawerToggle}>{drawerContent}</Drawer>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
+        <Toolbar />
+        <Container maxWidth="xl" sx={{ mt: 4 }}>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={5}>
+              <TransactionForm onAddTransaction={handleAddTransaction} />
+              <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
+            </Grid>
+            <Grid item xs={12} md={7}>
+              <Chat />
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </Box>
   );
 }
 

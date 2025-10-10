@@ -1,63 +1,63 @@
-// Ficheiro: backend/src/controllers/auth.controller.js
-
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { sendLoginEmail } from '../services/email.js';
 
 const createSessionToken = (id) => {
-  // ... (código igual)
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 };
 
 export const requestLoginLink = async (req, res) => {
-  console.log('\n--- Novo Pedido de Login Recebido ---');
   try {
     const { email } = req.body;
-    console.log(`1. Email recebido: ${email}`);
-
     let user = await User.findOne({ email });
     if (!user) {
-      console.log('2. Utilizador não encontrado, a criar um novo...');
       user = await User.create({ email });
-      console.log('3. Novo utilizador criado com ID:', user._id);
-    } else {
-      console.log('2. Utilizador encontrado com ID:', user._id);
     }
 
     const loginToken = user.createLoginToken();
+
+    // -- DEBUG LOGS --
+    console.log('\n--- A GERAR TOKEN DE LOGIN ---');
+    console.log('DEBUG: Token Original (para o email):', loginToken);
+    console.log('DEBUG: Token Hashed (guardado na BD):', user.loginToken);
+    // -- FIM DEBUG LOGS --
+
     await user.save({ validateBeforeSave: false });
-    console.log('3. Token de login temporário criado e guardado na BD.');
 
     const loginURL = `${process.env.FRONTEND_URL}/verify-login?token=${loginToken}`;
-    console.log(`4. A preparar para enviar email com o URL: ${loginURL}`);
-
     await sendLoginEmail({
       email: user.email,
       url: loginURL,
     });
-    console.log('5. Função sendLoginEmail terminou. A enviar resposta de sucesso.');
 
     res.status(200).json({ message: 'Link de login enviado para o seu email!' });
-    console.log('--- Pedido de Login Terminado com Sucesso ---\n');
 
   } catch (error) {
-    console.error('❌ ERRO APANHADO NO CONTROLLER:', error);
+    console.error('❌ ERRO AO PEDIR O LINK:', error);
     res.status(500).json({ error: 'Erro ao enviar o email. Tente novamente.' });
-    console.log('--- Pedido de Login Terminado com Erro ---\n');
   }
 };
 
 export const verifyLogin = async (req, res) => {
-  // ... (código igual)
   try {
     const { token } = req.body;
-    const hashedToken = crypto.createHash('sha264').update(token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // -- DEBUG LOGS --
+    console.log('\n--- A VERIFICAR O TOKEN ---');
+    console.log('DEBUG: Token Original (recebido do link):', token);
+    console.log('DEBUG: Token Hashed (para procurar na BD):', hashedToken);
+    // -- FIM DEBUG LOGS --
 
     const user = await User.findOne({
       loginToken: hashedToken,
       loginTokenExpires: { $gt: Date.now() },
     });
+
+    // -- DEBUG LOGS --
+    console.log('DEBUG: Resultado da procura na BD (user):', user ? `Utilizador ${user.email} encontrado!` : 'Nenhum utilizador encontrado.');
+    // -- FIM DEBUG LOGS --
 
     if (!user) {
       return res.status(400).json({ error: 'Token inválido ou expirado.' });
@@ -69,7 +69,10 @@ export const verifyLogin = async (req, res) => {
 
     const sessionToken = createSessionToken(user._id);
     res.status(200).json({ token: sessionToken });
-  } catch (error) {
+    console.log('--- VERIFICAÇÃO BEM-SUCEDIDA ---');
+
+  } catch (error) { // ✅ ERRO CORRIGIDO AQUI
+    console.error('❌ ERRO AO VERIFICAR O TOKEN:', error);
     res.status(500).json({ error: 'Erro ao verificar o login.' });
   }
 };

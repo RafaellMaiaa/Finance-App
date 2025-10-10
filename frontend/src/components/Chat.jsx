@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { askAi } from '../services/api'; // Usar o nosso novo serviço
+import { askAi } from '../services/api.js';
 import { Box, TextField, List, ListItem, ListItemText, Paper, Typography, CircularProgress, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
@@ -26,7 +26,6 @@ function Chat() {
     setIsLoading(true);
 
     try {
-      // A CHAMADA À API AGORA É MUITO MAIS SIMPLES!
       const response = await askAi(currentInput); 
       const aiMessage = { sender: 'ai', text: response.data.answer };
       setMessages(prev => [...prev, aiMessage]);
@@ -38,8 +37,6 @@ function Chat() {
     }
   };
 
-  // O resto do código JSX (a parte do return) pode permanecer exatamente igual
-  // ...
   return (
     <Paper elevation={5} sx={{ height: '70vh', display: 'flex', flexDirection: 'column', borderRadius: '15px' }}>
       <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>

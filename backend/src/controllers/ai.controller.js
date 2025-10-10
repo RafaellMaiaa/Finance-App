@@ -1,7 +1,3 @@
-// =================================================================
-// CÓDIGO COMPLETO PARA: backend/src/controllers/ai.controller.js
-// =================================================================
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Transaction from '../models/transaction.model.js';
 
@@ -14,19 +10,44 @@ export const askAi = async (req, res) => {
     if (!question) {
       return res.status(400).json({ error: "A pergunta é obrigatória." });
     }
-    
-    // PASSO 1 DE DEBUG: Ir buscar os dados financeiros à base de dados
-    const financialData = await Transaction.find().sort({ date: -1 }).limit(50);
 
-    // ✅ PASSO 2 DE DEBUG: A "CÂMARA DE VIGILÂNCIA"
-    // Vamos ver no terminal do backend o que foi encontrado na base de dados.
-    console.log('--- Dados Financeiros Encontrados na BD ---');
-    console.log(financialData);
-    console.log('-------------------------------------------');
+    // ✅✅✅ A NOSSA NOVA "REGRA ESPECIAL" COMEÇA AQUI ✅✅✅
 
-    // Validação extra: Se não houver dados, informamos a IA.
+    // Convertemos a pergunta para minúsculas para a verificação ser mais fiável
+    const lowerCaseQuestion = question.toLowerCase();
+
+    // Verificamos se a pergunta contém palavras-chave sobre o criador
+    if (
+      lowerCaseQuestion.includes('quem te criou') ||
+      lowerCaseQuestion.includes('quem te fez') ||
+      lowerCaseQuestion.includes('quem é o criador') ||
+      lowerCaseQuestion.includes('quem te desenvolveu') ||
+      lowerCaseQuestion.includes('criador do site') ||
+      lowerCaseQuestion.includes('criador da app')
+    ) {
+      // Se for uma pergunta sobre o criador, respondemos diretamente
+      const creatorResponse = "Fui criado pelo Rafael Maia. Ele é o desenvolvedor por trás desta aplicação.";
+      
+      // Enviamos a resposta e terminamos a função aqui, sem ir ao Gemini
+      return res.status(200).json({ answer: creatorResponse });
+    }
+
+    // ✅✅✅ FIM DA "REGRA ESPECIAL" ✅✅✅
+     if (
+      // ... (condições iguais)
+      lowerCaseQuestion.includes('criador do site') ||
+      lowerCaseQuestion.includes('criador da app')
+    ) {
+      // ✅ Resposta Atualizada
+      const creatorResponse = "Fui criado pelo Rafael Maia como parte da aplicação Finance Flow.";
+      return res.status(200).json({ answer: creatorResponse });
+    }
+    // Se a pergunta não for sobre o criador, o código continua como antes...
+
+    const financialData = await Transaction.find({ user: req.user._id }).sort({ date: -1 }).limit(50);
+
     if (!financialData || financialData.length === 0) {
-      const answer = "Não encontrei quaisquer dados financeiros na base de dados para analisar. Por favor, adicione primeiro as suas transações.";
+      const answer = "Não encontrei quaisquer dados financeiros na sua conta para analisar. Por favor, adicione primeiro as suas transações.";
       return res.status(200).json({ answer });
     }
 
@@ -45,7 +66,7 @@ export const askAi = async (req, res) => {
 
     res.status(200).json({ answer: text });
   } catch (error) {
-    console.error("Erro ao comunicar com a API do Gemini ou DB:", error); // <-- A PISTA ESTÁ AQUI
+    console.error("Erro ao comunicar com a API do Gemini ou DB:", error);
     res.status(500).json({ error: "Ocorreu um erro ao processar o seu pedido." });
-}
+  }
 };
