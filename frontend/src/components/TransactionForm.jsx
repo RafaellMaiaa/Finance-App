@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography } from '@mui/material';
-import { getCategories } from '../services/api.js'; // Importamos a função para ir buscar as categorias
+import { getCategories } from '../services/api.js';
 
 function TransactionForm({ onAddTransaction }) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('gasto');
-  
-  // O estado inicial da categoria pode ser uma string vazia
-  const [category, setCategory] = useState(''); 
-  // Novo estado para guardar a lista de categorias que vem da API
+  const [category, setCategory] = useState('');
+  const [notes, setNotes] = useState(''); // ✅ Novo estado para as notas
   const [categoryList, setCategoryList] = useState([]);
 
   // useEffect para ir buscar as categorias quando o componente é montado
@@ -29,15 +27,16 @@ function TransactionForm({ onAddTransaction }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!description || !amount || !category) { // Agora a categoria também é obrigatória
-      alert('Por favor, preencha todos os campos.');
+      alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    onAddTransaction({ description, amount: parseFloat(amount), type, category });
+    onAddTransaction({ description, amount: parseFloat(amount), type, category, notes });
     
     // Limpar o formulário
     setDescription('');
     setAmount('');
     setCategory('');
+    setNotes('');
   };
 
   return (
@@ -65,7 +64,7 @@ function TransactionForm({ onAddTransaction }) {
           <FormControlLabel value="ganho" control={<Radio />} label="Ganho" />
         </RadioGroup>
       </FormControl>
-       <FormControl fullWidth required>
+      <FormControl fullWidth required>
         <InputLabel>Categoria</InputLabel>
         <Select
           value={category}
@@ -81,6 +80,15 @@ function TransactionForm({ onAddTransaction }) {
           ))}
         </Select>
       </FormControl>
+      {/* ✅ NOVO CAMPO DE NOTAS ADICIONADO AQUI ✅ */}
+      <TextField
+        label="Notas (Opcional)"
+        variant="outlined"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        multiline
+        rows={2}
+      />
       <Button type="submit" variant="contained" color="primary">
         Adicionar
       </Button>

@@ -7,16 +7,12 @@ const transactionSchema = new mongoose.Schema({
   category: { type: String, required: true, trim: true },
   date: { type: Date, default: Date.now },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-});
-
-// ✅✅✅ O NOSSO "ESPIÃO" ✅✅✅
-transactionSchema.pre('save', function(next) {
-  console.log('\n--- MONGOOSE PRE-SAVE HOOK ---');
-  console.log('Documento prestes a ser guardado:', this);
-  if (!this.user) {
-    console.error('ALERTA DO PRE-SAVE: O campo "user" está em falta ANTES de guardar!');
-  }
-  next();
+  
+  // ✅ NOVO CAMPO ADICIONADO AQUI ✅
+  notes: {
+    type: String,
+    trim: true,
+  },
 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);

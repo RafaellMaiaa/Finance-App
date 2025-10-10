@@ -1,81 +1,118 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Box, Container, Typography, Paper, Grid, useTheme } from '@mui/material';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Box, Container, Typography, Paper, Grid, useTheme, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { getTransactions } from '../services/api.js';
 import { useAuth } from '../hooks/useAuth.js';
 
-// Função auxiliar para processar e agregar os dados das transações
-const processDataForChart = (transactions) => {
+// Função auxiliar para processar os dados das transações
+const processData = (transactions) => {
   if (!transactions || transactions.length === 0) {
-    return { spendingData: [], summary: { income: 0, expenses: 0, balance: 0 } };
+    return { spendingData: [], incomeData: [], summary: { income: 0, expenses: 0, balance: 0 } };
   }
 
-  // Agrega os gastos por categoria
+  // Gastos por categoria
   const spendingByCategory = transactions
     .filter(t => t.type === 'gasto')
     .reduce((acc, transaction) => {
       const category = transaction.category;
       const amount = Math.abs(transaction.amount);
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
+      if (!acc[category]) acc[category] = 0;
       acc[category] += amount;
       return acc;
     }, {});
 
-  // Transforma o objeto num array para o gráfico
+  // Ganhos por categoria
+  const incomeByCategory = transactions
+    .filter(t => t.type === 'ganho')
+    .reduce((acc, transaction) => {
+      const category = transaction.category;
+      const amount = transaction.amount;
+      if (!acc[category]) acc[category] = 0;
+      acc[category] += amount;
+      return acc;
+    }, {});
+
   const spendingData = Object.keys(spendingByCategory).map(category => ({
     name: category,
-    Gasto: spendingByCategory[category],
-  })).sort((a, b) => b.Gasto - a.Gasto); // Ordena do maior para o menor
+    value: spendingByCategory[category],
+  })).sort((a, b) => b.value - a.value);
 
-  // Calcula os totais
-  const income = transactions
-    .filter(t => t.type === 'ganho')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const expenses = transactions
-    .filter(t => t.type === 'gasto')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const incomeData = Object.keys(incomeByCategory).map(category => ({
+    name: category,
+    value: incomeByCategory[category],
+  })).sort((a, b) => b.value - a.value);
 
-  const summary = {
-    income,
-    expenses: Math.abs(expenses), // Apresentar como número positivo
-    balance: income + expenses,
+  const income = transactions.filter(t => t.type === 'ganho').reduce((sum, t) => sum + t.amount, 0);
+  const expenses = transactions.filter(t => t.type === 'gasto').reduce((sum, t) => sum + t.amount, 0);
+
+  return {
+    spendingData,
+    incomeData,
+    summary: { income, expenses: Math.abs(expenses), balance: income + expenses },
   };
-  
-  return { spendingData, summary };
 };
 
 function ReportsPage() {
-  const [data, setData] = useState({ spendingData: [], summary: { income: 0, expenses: 0, balance: 0 } });
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [filter, setFilter] = useState('thisMonth');
   const { user, logout } = useAuth();
   const theme = useTheme();
 
   useEffect(() => {
-    const fetchAndProcessData = async () => {
+    const fetchTransactionsData = async () => {
       if (user) {
         try {
           const response = await getTransactions();
-          const processedData = processDataForChart(response.data);
-          setData(processedData);
+          setAllTransactions(response.data);
         } catch (error) {
           if (error.response && error.response.status === 401) logout();
         }
       }
     };
-    fetchAndProcessData();
+    fetchTransactionsData();
   }, [user, logout]);
-  
-  const { spendingData, summary } = data;
+
+  const handleFilterChange = (event, newFilter) => {
+    if (newFilter !== null) setFilter(newFilter);
+  };
+
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    if (filter === 'thisMonth') {
+      return allTransactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+      });
+    }
+    if (filter === 'lastMonth') {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return allTransactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getMonth() === lastMonth.getMonth() && transactionDate.getFullYear() === lastMonth.getFullYear();
+      });
+    }
+    return allTransactions;
+  }, [allTransactions, filter]);
+
+  const { spendingData, incomeData, summary } = useMemo(() => processData(filteredTransactions), [filteredTransactions]);
+
+  const COLORS_SPENDING = ['#EF4444', '#F59E0B', '#F97316', '#FBBF24', '#FDBA74'];
+  const COLORS_INCOME = ['#00C2A8', '#22C55E', '#10B981', '#38BDF8', '#818CF8'];
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-        Relatórios
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          Relatórios
+        </Typography>
+        <ToggleButtonGroup value={filter} exclusive onChange={handleFilterChange}>
+          <ToggleButton value="thisMonth">Este Mês</ToggleButton>
+          <ToggleButton value="lastMonth">Mês Passado</ToggleButton>
+          <ToggleButton value="all">Tudo</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
-      {/* SECÇÃO DOS CARTÕES DE RESUMO */}
+      {/* Cartões de resumo */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
           <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -99,31 +136,68 @@ function ReportsPage() {
         </Grid>
       </Grid>
 
-      {/* SECÇÃO DO GRÁFICO */}
-      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400 }}>
-        <Typography component="h2" variant="h6" color="primary" gutterBottom>
-          Gastos por Categoria
-        </Typography>
-        {spendingData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={spendingData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
-              <YAxis stroke={theme.palette.text.secondary} />
-              <Tooltip
-                contentStyle={{ backgroundColor: theme.palette.background.paper, border: '1px solid #555' }}
-                formatter={(value) => `${value.toFixed(2)} €`}
-              />
-              <Legend />
-              <Bar dataKey="Gasto" fill={theme.palette.primary.main} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Typography>Não há dados de gastos suficientes para mostrar o gráfico.</Typography>
-          </Box>
-        )}
-      </Paper>
+      {/* Gráficos */}
+      <Grid container spacing={3}>
+        {/* Gráfico circular de gastos */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400 }}>
+            <Typography component="h2" variant="h6" color="primary" gutterBottom>Distribuição de Gastos</Typography>
+            {spendingData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={spendingData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {spendingData.map((entry, index) => (
+                      <Cell key={`cell-spending-${index}`} fill={COLORS_SPENDING[index % COLORS_SPENDING.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value.toFixed(2)} €`} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Typography>Sem dados de gastos.</Typography></Box>)}
+          </Paper>
+        </Grid>
+        {/* Gráfico circular de ganhos */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400 }}>
+            <Typography component="h2" variant="h6" color="primary" gutterBottom>Origem dos Ganhos</Typography>
+            {incomeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={incomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {incomeData.map((entry, index) => (
+                      <Cell key={`cell-income-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value.toFixed(2)} €`} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Typography>Sem dados de ganhos.</Typography></Box>)}
+          </Paper>
+        </Grid>
+        {/* Gráfico de barras de gastos por categoria */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400 }}>
+            <Typography component="h2" variant="h6" color="primary" gutterBottom>Gastos por Categoria</Typography>
+            {spendingData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={spendingData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" stroke={theme.palette.text.secondary} />
+                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} width={80} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                    contentStyle={{ backgroundColor: theme.palette.background.paper }}
+                    formatter={(value) => `${value.toFixed(2)} €`}
+                  />
+                  <Bar dataKey="value" name="Gasto" fill={theme.palette.primary.main} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Typography>Sem dados de gastos.</Typography></Box>)}
+          </Paper>
+        </Grid>
+      </Grid>
     </Container>
   );
 }

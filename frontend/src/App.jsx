@@ -10,11 +10,12 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import BudgetsPage from './pages/BudgetsPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 function App() {
   const [mode, setMode] = useState('dark');
-  
+
   const toggleTheme = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
@@ -25,12 +26,12 @@ function App() {
         palette: {
           mode,
           ...(mode === 'dark'
-            ? { // Tema Escuro
+            ? {
                 primary: { main: '#00C2A8' },
                 background: { default: '#1A202C', paper: '#2D3748' },
                 text: { primary: '#E0E0E0', secondary: '#A0AEC0' },
               }
-            : { // Tema Claro
+            : {
                 primary: { main: '#008070' },
                 background: { default: '#F7FAFC', paper: '#FFFFFF' },
                 text: { primary: '#2D3748', secondary: '#718096' },
@@ -56,6 +57,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

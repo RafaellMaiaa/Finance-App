@@ -11,7 +11,8 @@ export const getTransactions = async (req, res) => {
 
 export const addTransaction = async (req, res) => {
   try {
-    const { description, amount, type, category } = req.body;
+    // 1. Extraímos 'notes' do pedido
+    const { description, amount, type, category, notes } = req.body;
     const finalAmount = type === 'gasto' ? -Math.abs(amount) : Math.abs(amount);
 
     const newTransaction = new Transaction({
@@ -20,6 +21,7 @@ export const addTransaction = async (req, res) => {
       type,
       category,
       user: req.user._id,
+      notes, // 2. Adicionamos as notas ao novo objeto de transação
     });
 
     const savedTransaction = await newTransaction.save();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, ListItem, ListItemText, IconButton, Paper, Typography, Box } from '@mui/material';
+import { List, ListItem, ListItemText, IconButton, Paper, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 function TransactionList({ transactions, onDeleteTransaction }) {
@@ -27,7 +27,18 @@ function TransactionList({ transactions, onDeleteTransaction }) {
           >
             <ListItemText
               primary={t.description}
-              secondary={t.category}
+              secondary={
+                <React.Fragment>
+                  <Typography component="span" variant="body2" color="text.secondary">
+                    {t.category}
+                  </Typography>
+                  {t.notes && (
+                    <Typography component="span" variant="caption" sx={{ display: 'block', fontStyle: 'italic' }}>
+                      {t.notes}
+                    </Typography>
+                  )}
+                </React.Fragment>
+              }
             />
             <Typography
               sx={{ fontWeight: 'bold', color: t.type === 'ganho' ? 'success.main' : 'error.main' }}
