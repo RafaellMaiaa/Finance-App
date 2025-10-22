@@ -113,7 +113,7 @@ function DashboardPage({ toggleTheme }) {
       <AppBar position="fixed" elevation={1} sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
         <Toolbar>
           <IconButton color="inherit" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
-          <SavingsIcon color="primary" sx={{ mr: 1.5 }} />
+          <img src="/images/Logo.png" alt="Finance Flow Logo" style={{ height: 32, marginRight: '10px' }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>Finance Flow</Typography>
           {toggleTheme && (
             <IconButton onClick={toggleTheme} color="inherit">
@@ -134,7 +134,7 @@ function DashboardPage({ toggleTheme }) {
       <Drawer open={drawerOpen} onClose={handleDrawerToggle}>{drawerContent}</Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
         <Toolbar />
-        <Container maxWidth="xl" sx={{ mt: 4 }}>
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
           <Grid container spacing={4}>
             <Grid item xs={12} md={5}>
               <TransactionForm onAddTransaction={handleAddTransaction} />

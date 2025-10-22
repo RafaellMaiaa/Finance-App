@@ -2,33 +2,33 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import passport from 'passport'; // Importar o passport
-import './config/passport.js'; // Importar e executar a nossa configuração do passport
-import aiRoutes from './routes/ai.routes.js';
-import categoryRoutes from './routes/category.routes.js';
-import transactionRoutes from './routes/transaction.routes.js';
+import passport from 'passport';
+import './config/passport.js';
 import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js'; 
-const app = express();
-const PORT = process.env.PORT || 3000;
+import userRoutes from './routes/user.routes.js';
+import categoryRoutes from './routes/category.routes.js';
+import budgetRoutes from './routes/budget.routes.js';
+import aiRoutes from './routes/ai.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
 
-// Middlewares
+const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.use(cors());
 app.use(express.json());
-app.use(passport.initialize()); // Iniciar o passport
+app.use(passport.initialize());
 
-// Rota Principal para Teste
 app.get('/', (req, res) => {
-  res.send('<h1>A API está a funcionar e conectada à base de dados!</h1>');
+  res.send('<h1>API a funcionar e conectada à base de dados!</h1>');
 });
 
-// Rotas da API
-app.use('/api', categoryRoutes);
 app.use('/api', authRoutes);
-app.use('/api', userRoutes); // ✅ Adicionar esta linha
+app.use('/api', userRoutes);
+app.use('/api', categoryRoutes);
+app.use('/api', budgetRoutes);
 app.use('/api', aiRoutes);
 app.use('/api', transactionRoutes);
-// Conectar à Base de Dados MongoDB
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Conectado com sucesso ao MongoDB!');

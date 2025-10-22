@@ -15,7 +15,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 function App() {
   const [mode, setMode] = useState('dark');
-
+  
   const toggleTheme = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
@@ -48,13 +48,12 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Routes>
-        {/* Rotas Públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/verify-login" element={<VerifyLoginPage />} />
 
-        {/* Rotas Protegidas dentro do Layout */}
+        {/* ✅ A função 'toggleTheme' é passada aqui para o Layout */}
         <Route element={<ProtectedRoute><Layout toggleTheme={toggleTheme} /></ProtectedRoute>}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<DashboardPage toggleTheme={toggleTheme} />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />

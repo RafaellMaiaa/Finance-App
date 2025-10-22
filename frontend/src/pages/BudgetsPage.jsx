@@ -14,7 +14,7 @@ function BudgetsPage() {
   const [inputs, setInputs] = useState({});
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
-
+  
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
@@ -24,7 +24,7 @@ function BudgetsPage() {
         try {
           const [categoriesRes, transactionsRes, budgetsRes] = await Promise.all([
             getCategories(),
-            getTransactions(),
+            getTransactions(), // Vai buscar TODAS as transações
             getBudgets(currentMonth, currentYear)
           ]);
 
@@ -50,20 +50,19 @@ function BudgetsPage() {
     fetchData();
   }, [user, logout, currentMonth, currentYear]);
 
-  // Calcula os gastos atuais por categoria para o mês corrente
+  // Calcula os gastos atuais por categoria
   const spendingByCategory = useMemo(() => {
     return transactions
-      .filter(t => {
-        const tDate = new Date(t.date);
-        return t.type === 'gasto' && tDate.getMonth() + 1 === currentMonth && tDate.getFullYear() === currentYear;
-      })
+      // ✅ CORREÇÃO: Removemos o filtro de data daqui para simplificar
+      // Agora ele considera os gastos de TODAS as transações.
+      .filter(t => t.type === 'gasto')
       .reduce((acc, t) => {
         const amount = Math.abs(t.amount);
         if (!acc[t.category]) acc[t.category] = 0;
         acc[t.category] += amount;
         return acc;
       }, {});
-  }, [transactions, currentMonth, currentYear]);
+  }, [transactions]); // Removemos a dependência do mês e ano
 
   const handleInputChange = (categoryName, value) => {
     setInputs(prev => ({ ...prev, [categoryName]: value }));
@@ -79,10 +78,8 @@ function BudgetsPage() {
     }
   };
 
-  // Filtra apenas as categorias que já tiveram gastos este mês, ou que têm um orçamento definido, ou que têm input preenchido
-  const relevantCategories = categories.filter(
-    cat => spendingByCategory[cat.name] > 0 || budgets[cat.name] > 0 || (inputs[cat.name] && inputs[cat.name] !== '')
-  );
+  // Mostra todas as categorias que o utilizador criou
+  const relevantCategories = categories;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -91,9 +88,7 @@ function BudgetsPage() {
       </Typography>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
       ) : (
         <Paper>
           <List>
@@ -106,18 +101,12 @@ function BudgetsPage() {
               return (
                 <ListItem key={category._id} divider>
                   <Grid container alignItems="center" spacing={2}>
-                    <Grid item xs={12} sm={3}>
-                      <ListItemText primary={category.name} />
-                    </Grid>
+                    <Grid item xs={12} sm={3}><ListItemText primary={category.name} /></Grid>
                     <Grid item xs={12} sm={6}>
                       <Box sx={{ width: '100%' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {spent.toFixed(2)}€
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {budget > 0 ? `${budget.toFixed(2)}€` : 'Sem orçamento'}
-                          </Typography>
+                          <Typography variant="body2" color="text.secondary">{spent.toFixed(2)}€ gastos</Typography>
+                          <Typography variant="body2" color="text.secondary">{budget > 0 ? `de ${budget.toFixed(2)}€` : 'Sem orçamento'}</Typography>
                         </Box>
                         <LinearProgress
                           variant="determinate"
@@ -132,16 +121,14 @@ function BudgetsPage() {
                         label="Definir Limite"
                         type="number"
                         size="small"
-                        value={inputs[category.name] || ''}
+                        defaultValue={inputs[category.name] || ''}
                         onChange={(e) => handleInputChange(category.name, e.target.value)}
                         InputProps={{
                           startAdornment: <InputAdornment position="start">€</InputAdornment>,
                           endAdornment: (
                             <InputAdornment position="end">
                               <Tooltip title="Guardar Orçamento">
-                                <IconButton onClick={() => handleSetBudget(category.name)} edge="end">
-                                  <SaveIcon />
-                                </IconButton>
+                                <IconButton onClick={() => handleSetBudget(category.name)} edge="end"><SaveIcon /></IconButton>
                               </Tooltip>
                             </InputAdornment>
                           ),
@@ -153,7 +140,7 @@ function BudgetsPage() {
               );
             }) : (
               <Typography sx={{ textAlign: 'center', p: 4, color: 'text.secondary' }}>
-                Não há gastos ou orçamentos para este mês. Adicione uma transação para começar.
+                Primeiro, crie algumas categorias na página "Gerir Categorias".
               </Typography>
             )}
           </List>

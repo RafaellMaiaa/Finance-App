@@ -15,6 +15,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { useAuth } from '../hooks/useAuth.js';
 
+
 function Layout({ toggleTheme }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -74,11 +75,14 @@ function Layout({ toggleTheme }) {
       <AppBar position="fixed" elevation={1} sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
         <Toolbar>
           <IconButton color="inherit" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
-          <SavingsIcon color="primary" sx={{ mr: 1.5 }} />
+          <img src="/images/Logo.png" alt="Finance Flow Logo" style={{ height: 32, marginRight: '10px' }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>Finance Flow</Typography>
+          
+          {/* ✅ O BOTÃO DE TEMA ESTÁ AQUI ✅ */}
           <IconButton onClick={toggleTheme} color="inherit">
             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
+          
           {user ? (
             <div>
               <IconButton size="large" onClick={handleMenu} color="inherit"><AccountCircle /></IconButton>
@@ -90,7 +94,9 @@ function Layout({ toggleTheme }) {
           ) : (<Skeleton variant="circular" width={40} height={40} />)}
         </Toolbar>
       </AppBar>
+      
       <Drawer open={drawerOpen} onClose={handleDrawerToggle}>{drawerContent}</Drawer>
+
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
         <Toolbar />
         <Outlet />
