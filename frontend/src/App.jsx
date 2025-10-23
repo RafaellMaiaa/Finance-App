@@ -11,6 +11,7 @@ import ReportsPage from './pages/ReportsPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import BudgetsPage from './pages/BudgetsPage.jsx';
+import RecurringPage from './pages/RecurringPage.jsx'; // ...changed...
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 function App() {
@@ -57,6 +58,7 @@ function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/recurring" element={<RecurringPage />} /> {/* ...changed... */}
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import budgetRoutes from './routes/budget.routes.js';
+import recurringTransactionRoutes from './routes/recurringTransaction.routes.js'; // ✅ Adicionado
 import aiRoutes from './routes/ai.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 
@@ -26,6 +27,7 @@ app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', budgetRoutes);
+app.use('/api', recurringTransactionRoutes); // ✅ Adicionado
 app.use('/api', aiRoutes);
 app.use('/api', transactionRoutes);
 

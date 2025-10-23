@@ -12,9 +12,9 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CategoryIcon from '@mui/icons-material/Category';
 import SettingsIcon from '@mui/icons-material/Settings';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'; // Importar o ícone
+import SyncIcon from '@mui/icons-material/Sync'; // ✅ Adicionado
 import { useAuth } from '../hooks/useAuth.js';
-
 
 function Layout({ toggleTheme }) {
   const { user, logout } = useAuth();
@@ -37,10 +37,12 @@ function Layout({ toggleTheme }) {
     }
   };
 
+  // ✅ LISTA DO MENU CORRIGIDA E COMPLETA ✅
   const menuItems = [
     { text: 'Painel Principal', icon: <DashboardIcon />, path: '/' },
     { text: 'Relatórios', icon: <BarChartIcon />, path: '/reports' },
     { text: 'Orçamentos', icon: <AccountBalanceWalletIcon />, path: '/budgets' },
+    { text: 'Recorrentes', icon: <SyncIcon />, path: '/recurring' }, // ✅ Adicionado
     { text: 'Categorias', icon: <CategoryIcon />, path: '/categories' },
   ];
 
@@ -72,17 +74,12 @@ function Layout({ toggleTheme }) {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" elevation={1} sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
+      <AppBar position="fixed" elevation={1} sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
         <Toolbar>
           <IconButton color="inherit" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
-          <img src="/images/Logo.png" alt="Finance Flow Logo" style={{ height: 32, marginRight: '10px' }} />
+          <SavingsIcon color="primary" sx={{ mr: 1.5 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>Finance Flow</Typography>
-          
-          {/* ✅ O BOTÃO DE TEMA ESTÁ AQUI ✅ */}
-          <IconButton onClick={toggleTheme} color="inherit">
-            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-          
+          <IconButton onClick={toggleTheme} color="inherit">{theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}</IconButton>
           {user ? (
             <div>
               <IconButton size="large" onClick={handleMenu} color="inherit"><AccountCircle /></IconButton>

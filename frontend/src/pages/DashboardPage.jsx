@@ -1,48 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, Box, Grid, AppBar, Toolbar, IconButton, Menu, MenuItem, Skeleton,
-  Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider, useTheme
+  Container, Typography, Box, Grid, Paper, Button
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import SavingsIcon from '@mui/icons-material/Savings';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import CategoryIcon from '@mui/icons-material/Category';
-import SettingsIcon from '@mui/icons-material/Settings';
-
+import SyncIcon from '@mui/icons-material/Sync';
 import Chat from '../components/Chat.jsx';
 import TransactionForm from '../components/TransactionForm.jsx';
 import TransactionList from '../components/TransactionList.jsx';
-import { getTransactions, addTransaction, deleteTransaction } from '../services/api.js';
+import { getTransactions, addTransaction, deleteTransaction, generateRecurringTransactions } from '../services/api.js'; // ✅ nova importação
 import { useAuth } from '../hooks/useAuth.js';
+import { useSnackbar } from '../context/SnackbarContext.jsx'; // ✅ Importar o nosso hook de snackbar
+import { formatCurrency } from '../utils/currency.js';
 
-function DashboardPage({ toggleTheme }) {
+function DashboardPage() {
   const [transactions, setTransactions] = useState([]);
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const theme = useTheme();
-
-  const [anchorEl, setAnchorEl] = useState(null);
-  const openUserMenu = Boolean(anchorEl);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const handleMenu = (event) => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
-  const handleProfile = () => { navigate('/profile'); handleClose(); };
-  const handleDrawerToggle = () => setDrawerOpen(!drawerOpen);
-
-  const navigateTo = (path) => {
-    navigate(path);
-    setDrawerOpen(false);
-  };
+  const showSnackbar = useSnackbar(); // ✅ Inicializar o hook de snackbar
 
   useEffect(() => {
-    if (user) fetchTransactions();
-    // eslint-disable-next-line
+    if (user) {
+      fetchTransactions();
+    }
   }, [user]);
 
   const fetchTransactions = async () => {
@@ -58,8 +36,10 @@ function DashboardPage({ toggleTheme }) {
     try {
       await addTransaction(transaction);
       fetchTransactions();
-    } catch (error) {
+      showSnackbar && showSnackbar('Transação adicionada com sucesso!', 'success'); // ✅ Mostrar notificação de sucesso
+    } catch (error) { 
       console.error('Erro ao adicionar transação:', error);
+      showSnackbar && showSnackbar('Erro ao adicionar transação.', 'error'); // ✅ Mostrar notificação de erro
     }
   };
 
@@ -67,86 +47,104 @@ function DashboardPage({ toggleTheme }) {
     try {
       await deleteTransaction(id);
       fetchTransactions();
-    } catch (error) {
+      showSnackbar && showSnackbar('Transação apagada com sucesso!', 'info'); // ✅ Mostrar notificação de informação
+    } catch (error) { 
       console.error('Erro ao apagar transação:', error);
+      showSnackbar && showSnackbar('Erro ao apagar transação.', 'error');
     }
   };
 
-  const drawerContent = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <Toolbar />
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigateTo('/')}>
-            <ListItemIcon><DashboardIcon /></ListItemIcon>
-            <ListItemText primary="Painel Principal" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigateTo('/reports')}>
-            <ListItemIcon><BarChartIcon /></ListItemIcon>
-            <ListItemText primary="Relatórios" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigateTo('/categories')}>
-            <ListItemIcon><CategoryIcon /></ListItemIcon>
-            <ListItemText primary="Categorias" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigateTo('/settings')}>
-            <ListItemIcon><SettingsIcon /></ListItemIcon>
-            <ListItemText primary="Definições" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
-  );
+  // ✅ NOVA FUNÇÃO PARA O BOTÃO "MÁGICO"
+  const handleGenerateRecurring = async () => {
+    try {
+      const response = await generateRecurringTransactions();
+      showSnackbar && showSnackbar(response?.data?.message || 'Operação concluída!', 'success');
+      fetchTransactions(); // Atualiza a lista principal de transações
+    } catch (error) {
+      console.error('Erro ao gerar recorrentes:', error);
+      showSnackbar && showSnackbar('Erro ao gerar transações recorrentes.', 'error');
+    }
+  };
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    const currentMonthTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+    });
+
+    const income = currentMonthTransactions
+      .filter(t => t.type === 'ganho')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const expenses = currentMonthTransactions
+      .filter(t => t.type === 'gasto')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      income,
+      expenses: Math.abs(expenses),
+      balance: income + expenses,
+    };
+  }, [transactions]);
+
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" elevation={1} sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
-        <Toolbar>
-          <IconButton color="inherit" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
-          <img src="/images/Logo.png" alt="Finance Flow Logo" style={{ height: 32, marginRight: '10px' }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>Finance Flow</Typography>
-          {toggleTheme && (
-            <IconButton onClick={toggleTheme} color="inherit">
-              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-          )}
-          {user ? (
-            <div>
-              <IconButton size="large" onClick={handleMenu} color="inherit"><AccountCircle /></IconButton>
-              <Menu anchorEl={anchorEl} open={openUserMenu} onClose={handleClose}>
-                <MenuItem onClick={handleProfile}>Editar Perfil</MenuItem>
-                <MenuItem onClick={logout}>Sair</MenuItem>
-              </Menu>
-            </div>
-          ) : (<Skeleton variant="circular" width={40} height={40} />)}
-        </Toolbar>
-      </AppBar>
-      <Drawer open={drawerOpen} onClose={handleDrawerToggle}>{drawerContent}</Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
-        <Toolbar />
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={5}>
-              <TransactionForm onAddTransaction={handleAddTransaction} />
-              <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
-            </Grid>
-            <Grid item xs={12} md={7}>
-              <Chat />
-            </Grid>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+            Resumo de {new Date().toLocaleString('pt-PT', { month: 'long' })}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<SyncIcon />}
+            onClick={handleGenerateRecurring}
+            size="small"
+          >
+            Gerar Recorrentes do Mês
+          </Button>
+        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="subtitle1" color="text.secondary">Ganhos</Typography>
+              <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                {formatCurrency(summary.income, user?.preferredCurrency)}
+              </Typography>
+            </Paper>
           </Grid>
-        </Container>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="subtitle1" color="text.secondary">Gastos</Typography>
+              <Typography variant="h5" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                {formatCurrency(summary.expenses, user?.preferredCurrency)}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="subtitle1" color="text.secondary">Saldo</Typography>
+              {/* ✅ CORREÇÃO APLICADA AQUI ✅ */}
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: summary.balance >= 0 ? 'success.main' : 'error.main' }}>
+                {formatCurrency(summary.balance, user?.preferredCurrency)}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
       </Box>
-    </Box>
+
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={5}>
+          <TransactionForm onAddTransaction={handleAddTransaction} />
+          <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
+        </Grid>
+        <Grid item xs={12} md={7}>
+          <Chat />
+        </Grid>
+      </Grid>
+    </Container>
   );
 }
 

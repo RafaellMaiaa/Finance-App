@@ -22,6 +22,7 @@ export const updateUserProfile = (userData) => apiClient.put('/users/me', userDa
 export const getTransactions = () => apiClient.get('/transactions');
 export const addTransaction = (transaction) => apiClient.post('/transactions', transaction);
 export const deleteTransaction = (id) => apiClient.delete(`/transactions/${id}`);
+export const generateRecurringTransactions = () => apiClient.post('/transactions/generate-recurring'); // ✅ Adicionado
 
 // --- ROTA DA IA ---
 export const askAi = (question) => apiClient.post('/ask-ai', { question });
@@ -32,7 +33,12 @@ export const createCategory = (categoryData) => apiClient.post('/categories', ca
 export const updateCategory = (id, categoryData) => apiClient.put(`/categories/${id}`, categoryData);
 export const deleteCategory = (id) => apiClient.delete(`/categories/${id}`);
 
-// --- ✅ NOVAS ROTAS DE ORÇAMENTOS ✅ ---
+// --- ROTAS DE ORÇAMENTOS ---
 export const getBudgets = (month, year) => apiClient.get(`/budgets?month=${month}&year=${year}`);
 export const setBudget = (budgetData) => apiClient.post('/budgets', budgetData);
 export const deleteBudget = (id) => apiClient.delete(`/budgets/${id}`);
+
+// --- ✅ NOVAS ROTAS DE TRANSAÇÕES RECORRENTES ✅ ---
+export const getRecurringTransactions = () => apiClient.get('/recurring-transactions');
+export const createRecurringTransaction = (data) => apiClient.post('/recurring-transactions', data);
+export const deleteRecurringTransaction = (id) => apiClient.delete(`/recurring-transactions/${id}`);

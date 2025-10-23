@@ -6,6 +6,7 @@ import {
 import SaveIcon from '@mui/icons-material/Save';
 import { useAuth } from '../hooks/useAuth.js';
 import { getCategories, getTransactions, getBudgets, setBudget } from '../services/api.js';
+import { formatCurrency } from '../utils/currency.js';
 
 function BudgetsPage() {
   const [categories, setCategories] = useState([]);
@@ -20,30 +21,31 @@ function BudgetsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (user) {
-        try {
-          const [categoriesRes, transactionsRes, budgetsRes] = await Promise.all([
-            getCategories(),
-            getTransactions(), // Vai buscar TODAS as transações
-            getBudgets(currentMonth, currentYear)
-          ]);
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-          setCategories(categoriesRes.data);
-          setTransactions(transactionsRes.data);
+      try {
+        const [categoriesRes, transactionsRes, budgetsRes] = await Promise.all([
+          getCategories(),
+          getTransactions(),
+          getBudgets(currentMonth, currentYear)
+        ]);
 
-          const budgetsMap = budgetsRes.data.reduce((acc, budget) => {
-            acc[budget.category] = budget.amount;
-            return acc;
-          }, {});
-          setBudgets(budgetsMap);
-          setInputs(budgetsMap);
+        setCategories(categoriesRes.data || []);
+        setTransactions(transactionsRes.data || []);
 
-        } catch (error) {
-          if (error.response && error.response.status === 401) logout();
-        } finally {
-          setLoading(false);
-        }
-      } else {
+        const budgetsMap = (budgetsRes.data || []).reduce((acc, budget) => {
+          acc[budget.category] = budget.amount;
+          return acc;
+        }, {});
+        setBudgets(budgetsMap);
+        setInputs(budgetsMap);
+      } catch (error) {
+        if (error?.response?.status === 401) logout();
+        else console.error('Erro ao carregar dados de orçamentos:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -52,34 +54,34 @@ function BudgetsPage() {
 
   // Calcula os gastos atuais por categoria
   const spendingByCategory = useMemo(() => {
-    return transactions
-      // ✅ CORREÇÃO: Removemos o filtro de data daqui para simplificar
-      // Agora ele considera os gastos de TODAS as transações.
+    return (transactions || [])
       .filter(t => t.type === 'gasto')
       .reduce((acc, t) => {
-        const amount = Math.abs(t.amount);
+        const amount = Math.abs(Number(t.amount) || 0);
         if (!acc[t.category]) acc[t.category] = 0;
         acc[t.category] += amount;
         return acc;
       }, {});
-  }, [transactions]); // Removemos a dependência do mês e ano
+  }, [transactions]);
 
   const handleInputChange = (categoryName, value) => {
     setInputs(prev => ({ ...prev, [categoryName]: value }));
   };
 
   const handleSetBudget = async (categoryName) => {
-    const amount = parseFloat(inputs[categoryName] || 0);
+    const raw = inputs[categoryName];
+    const amount = Number(raw === '' || raw == null ? 0 : parseFloat(raw));
     try {
       await setBudget({ category: categoryName, amount, month: currentMonth, year: currentYear });
       setBudgets(prev => ({ ...prev, [categoryName]: amount }));
+      setInputs(prev => ({ ...prev, [categoryName]: amount }));
     } catch (error) {
       console.error("Erro ao definir orçamento:", error);
     }
   };
 
   // Mostra todas as categorias que o utilizador criou
-  const relevantCategories = categories;
+  const relevantCategories = categories || [];
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -101,12 +103,19 @@ function BudgetsPage() {
               return (
                 <ListItem key={category._id} divider>
                   <Grid container alignItems="center" spacing={2}>
-                    <Grid item xs={12} sm={3}><ListItemText primary={category.name} /></Grid>
+                    <Grid item xs={12} sm={3}>
+                      <ListItemText primary={category.name} />
+                    </Grid>
+
                     <Grid item xs={12} sm={6}>
                       <Box sx={{ width: '100%' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">{spent.toFixed(2)}€ gastos</Typography>
-                          <Typography variant="body2" color="text.secondary">{budget > 0 ? `de ${budget.toFixed(2)}€` : 'Sem orçamento'}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatCurrency(spent, user?.preferredCurrency)} gastos
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {budget > 0 ? `de ${formatCurrency(budget, user?.preferredCurrency)}` : 'Sem orçamento'}
+                          </Typography>
                         </Box>
                         <LinearProgress
                           variant="determinate"
@@ -116,19 +125,22 @@ function BudgetsPage() {
                         />
                       </Box>
                     </Grid>
+
                     <Grid item xs={12} sm={3}>
                       <TextField
                         label="Definir Limite"
                         type="number"
                         size="small"
-                        defaultValue={inputs[category.name] || ''}
+                        value={inputs[category.name] ?? ''}
                         onChange={(e) => handleInputChange(category.name, e.target.value)}
                         InputProps={{
                           startAdornment: <InputAdornment position="start">€</InputAdornment>,
                           endAdornment: (
                             <InputAdornment position="end">
                               <Tooltip title="Guardar Orçamento">
-                                <IconButton onClick={() => handleSetBudget(category.name)} edge="end"><SaveIcon /></IconButton>
+                                <IconButton aria-label={`guardar-orcamento-${category.name}`} onClick={() => handleSetBudget(category.name)} edge="end">
+                                  <SaveIcon />
+                                </IconButton>
                               </Tooltip>
                             </InputAdornment>
                           ),
