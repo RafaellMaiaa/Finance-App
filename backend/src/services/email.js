@@ -1,14 +1,18 @@
 import axios from 'axios';
 
-export const sendLoginEmail = async (options) => {
-  console.log('--- A tentar enviar email para:', options.email, 'via API HTTP ---');
+// Agora a função chama-se 'sendEmail' para ser mais genérica
+export const sendEmail = async (options) => {
+  console.log(`--- A tentar enviar email para: ${options.email} via API HTTP ---`);
+  console.log(`--- Assunto: ${options.subject} ---`); // Adicionamos um log para o assunto
 
   const emailPayload = {
-    // IMPORTANTE: Use o endereço de onboarding para os testes iniciais
-    from: 'Finance App <onboarding@resend.dev>', 
+    from: 'Finance Flow <onboarding@resend.dev>', // Podemos manter este remetente por agora
     to: options.email,
-    subject: 'O seu link para entrar na Finance App',
-    html: `<p>Olá!</p><p>Para entrar na sua conta, por favor clique neste link. Ele é válido por 10 minutos.</p><a href="${options.url}">Entrar na Aplicação</a>`,
+    
+    // ✅ USA O ASSUNTO E HTML RECEBIDOS ✅
+    // Se não forem passados, usa os valores padrão do email de login (fallback)
+    subject: options.subject || 'O seu link para entrar na Finance App',
+    html: options.html || `<p>Olá!</p><p>Para entrar na sua conta, por favor clique neste link. Ele é válido por 10 minutos.</p><a href="${options.url}">Entrar na Aplicação</a>`,
   };
 
   try {
@@ -23,7 +27,11 @@ export const sendLoginEmail = async (options) => {
     return response.data;
 
   } catch (error) {
-    console.error('❌ ERRO ao enviar email pela API do Resend:', error.response ? error.response.data : error.message);
-    throw error;
+    // Mostra mais detalhes do erro, se disponíveis
+    const errorDetails = error.response ? error.response.data : error.message;
+    console.error('❌ ERRO ao enviar email pela API do Resend:', errorDetails);
+    
+    // Re-lança o erro para que o controller saiba que falhou
+    throw new Error(`Falha ao enviar email: ${errorDetails.message || error.message}`); 
   }
 };

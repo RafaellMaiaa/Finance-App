@@ -36,7 +36,14 @@ const recurringTransactionSchema = new mongoose.Schema({
     min: 1,
     max: 31,
   },
-  lastGenerated: { // Para sabermos qual o último mês/ano gerado
+
+  // Guarda o último período (YYYY-MM) em que a transação foi gerada
+  lastGenerated: {
+    type: String, // Formato "YYYY-MM"
+  },
+
+  // ✅ NOVO CAMPO: Guarda o último período (YYYY-MM) em que foi enviada uma notificação/aviso
+  lastNotifiedPeriod: {
     type: String, // Formato "YYYY-MM"
   },
 }, {

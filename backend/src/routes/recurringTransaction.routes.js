@@ -3,6 +3,7 @@ import {
   getRecurringTransactions,
   createRecurringTransaction,
   deleteRecurringTransaction,
+  checkAndNotifyRecurring, // ...changed...
 } from '../controllers/recurringTransaction.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -16,5 +17,8 @@ router.route('/recurring-transactions')
 
 router.route('/recurring-transactions/:id')
   .delete(deleteRecurringTransaction);
+
+// ✅ NOVA ROTA PARA ATIVAR A VERIFICAÇÃO DE LEMBRETES ✅
+router.post('/recurring-transactions/check-notify', checkAndNotifyRecurring);
 
 export default router;

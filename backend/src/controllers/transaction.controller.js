@@ -11,8 +11,14 @@ export const getTransactions = async (req, res) => {
 };
 
 export const addTransaction = async (req, res) => {
+  console.log('\n--- CÂMARA 1: Tentativa de adicionar transação ---');
   try {
-    // 1. Extraímos 'notes' do pedido
+    if (!req.user || !req.user._id) {
+      console.error('❌ CÂMARA 2 - ERRO AUTH: req.user não encontrado!');
+      return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    console.log('✅ CÂMARA 2: Utilizador:', req.user._id);
+
     const { description, amount, type, category, notes } = req.body;
     const finalAmount = type === 'gasto' ? -Math.abs(amount) : Math.abs(amount);
 
@@ -21,14 +27,22 @@ export const addTransaction = async (req, res) => {
       amount: finalAmount,
       type,
       category,
+      notes,
       user: req.user._id,
-      notes, // 2. Adicionamos as notas ao novo objeto de transação
     });
 
+    console.log('✅ CÂMARA 3: Objeto pronto para guardar:', newTransaction);
+    
+    // Tentativa de guardar
     const savedTransaction = await newTransaction.save();
+    
+    // Se chegou aqui, guardou com sucesso!
+    console.log('✅ CÂMARA 4: Transação guardada com sucesso na BD!');
     res.status(201).json(savedTransaction);
+
   } catch (error) {
-    console.error("Erro ao adicionar transação:", error); 
+    // Se houver QUALQUER erro durante o .save() ou antes, ele será apanhado aqui
+    console.error("❌ CÂMARA 5 - ERRO FATAL ao adicionar:", error); 
     res.status(400).json({ error: 'Erro ao adicionar a transação.' });
   }
 };

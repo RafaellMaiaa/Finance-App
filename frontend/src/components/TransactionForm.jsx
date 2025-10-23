@@ -1,18 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography, CircularProgress, InputAdornment } from '@mui/material';
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  RadioGroup, 
+  FormControlLabel, 
+  Radio, 
+  FormControl, 
+  FormLabel, 
+  Select, 
+  MenuItem, 
+  InputLabel, 
+  Typography, 
+  CircularProgress, 
+  InputAdornment,
+  Grid // Importar Grid para layout
+} from '@mui/material';
 import { getCategories } from '../services/api.js';
+import { useAuth } from '../hooks/useAuth.js';
+import { convertToBaseCurrency, CURRENCY_SYMBOLS } from '../utils/currency.js';
 
 function TransactionForm({ onAddTransaction }) {
+  const { user } = useAuth();
+  const preferredCurrency = user?.preferredCurrency || 'EUR';
+
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amountInput, setAmountInput] = useState('');
   const [type, setType] = useState('gasto');
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [categoryList, setCategoryList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // ✅ NOVO ESTADO PARA GUARDAR OS ERROS ✅
   const [errors, setErrors] = useState({});
+  
+  // Estado para a moeda selecionada PARA ESTA transação
+  const [transactionCurrency, setTransactionCurrency] = useState(preferredCurrency);
+
+  // Atualiza a moeda da transação se a preferida do utilizador mudar
+  useEffect(() => {
+    setTransactionCurrency(preferredCurrency);
+  }, [preferredCurrency]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -23,72 +50,107 @@ function TransactionForm({ onAddTransaction }) {
         console.error("Erro ao obter categorias:", error);
       }
     };
-    fetchCategories();
-  }, []);
+    if (user) fetchCategories();
+  }, [user]);
 
-  // ✅ NOVA FUNÇÃO DE VALIDAÇÃO ✅
   const validateForm = () => {
     let tempErrors = {};
     if (!description.trim()) tempErrors.description = "Descrição é obrigatória.";
-    if (amount === '' || amount === null) tempErrors.amount = "Montante é obrigatório.";
-    if (amount !== '' && isNaN(parseFloat(amount))) tempErrors.amount = "Montante deve ser um número.";
+    if (!amountInput) tempErrors.amount = "Montante é obrigatório.";
+    const parsedAmount = parseFloat(amountInput.replace(',', '.')); // Lida com vírgula decimal
+    if (isNaN(parsedAmount) || parsedAmount <= 0) tempErrors.amount = "Montante deve ser um número positivo.";
     if (!category) tempErrors.category = "Categoria é obrigatória.";
-    
     setErrors(tempErrors);
-    // Retorna true se não houver erros (o objeto está vazio)
     return Object.keys(tempErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // 1. Validar antes de submeter
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     try {
-      await onAddTransaction({ description, amount: parseFloat(amount), type, category, notes });
+      const amountInSelectedCurrency = parseFloat(amountInput.replace(',', '.'));
+      // Conversão usando a moeda selecionada no formulário
+      const amountInBaseCurrency = convertToBaseCurrency(amountInSelectedCurrency, transactionCurrency);
+
+      await onAddTransaction({ 
+        description, 
+        amount: amountInBaseCurrency, // Envia sempre em EUR
+        type, 
+        category, 
+        notes 
+      });
+      
+      // Limpar formulário
       setDescription('');
-      setAmount('');
+      setAmountInput('');
       setCategory('');
       setNotes('');
-      setErrors({}); // Limpa os erros em caso de sucesso
+      setTransactionCurrency(preferredCurrency); // Volta para a moeda preferida
+      setErrors({});
     } catch (error) {
-      // O erro já é mostrado pelo Snackbar no DashboardPage
-      console.error('Erro no submit da transação:', error);
+      console.error("Erro no handleSubmit do TransactionForm:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  // Obtém o símbolo da moeda SELECIONADA para esta transação
+  const currentSymbol = CURRENCY_SYMBOLS[transactionCurrency] || '€';
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 3, border: '1px solid #424242', borderRadius: '15px', mb: 4 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>Adicionar Nova Transação</Typography>
       
-      {/* CAMPOS COM VALIDAÇÃO INTEGRADA */}
       <TextField
         label="Descrição"
         variant="outlined"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         required
-        error={!!errors.description}
+        error={!!errors.description} 
         helperText={errors.description}
       />
-      <TextField
-        label="Montante"
-        variant="outlined"
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        required
-        error={!!errors.amount}
-        helperText={errors.amount}
-        InputProps={{
-          startAdornment: <InputAdornment position="start">€</InputAdornment>
-        }}
-      />
+      
+      {/* Grid para colocar Montante e Seletor de Moeda lado a lado */}
+      <Grid container spacing={2} alignItems="flex-start">
+        <Grid item xs={8}>
+          <TextField
+            label={`Montante (${currentSymbol})`} // Label usa o símbolo atual
+            variant="outlined"
+            type="text"
+            inputMode="decimal"
+            value={amountInput}
+            onChange={(e) => setAmountInput(e.target.value)}
+            required
+            error={!!errors.amount}
+            helperText={errors.amount}
+            fullWidth // Ocupa a largura da sua coluna na Grid
+            InputProps={{
+              startAdornment: <InputAdornment position="start">{currentSymbol}</InputAdornment>,
+            }}
+          />
+        </Grid>
+        <Grid item xs={4}>
+           {/* Novo Seletor de Moeda */}
+          <FormControl fullWidth>
+            <InputLabel>Moeda</InputLabel>
+            <Select
+              value={transactionCurrency}
+              label="Moeda"
+              onChange={(e) => setTransactionCurrency(e.target.value)}
+            >
+              {Object.keys(CURRENCY_SYMBOLS).map((currencyCode) => (
+                <MenuItem key={currencyCode} value={currencyCode}>
+                  {currencyCode} ({CURRENCY_SYMBOLS[currencyCode]})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+      
       <FormControl>
         <FormLabel>Tipo</FormLabel>
         <RadioGroup row value={type} onChange={(e) => setType(e.target.value)}>
@@ -97,7 +159,7 @@ function TransactionForm({ onAddTransaction }) {
         </RadioGroup>
       </FormControl>
 
-      <FormControl fullWidth required error={!!errors.category}>
+       <FormControl fullWidth required error={!!errors.category}>
         <InputLabel>Categoria</InputLabel>
         <Select
           value={category}
@@ -110,7 +172,6 @@ function TransactionForm({ onAddTransaction }) {
             </MenuItem>
           ))}
         </Select>
-        {/* Mostra a mensagem de erro para o Select */}
         {errors.category && <Typography color="error" variant="caption" sx={{ ml: 2, mt: 0.5 }}>{errors.category}</Typography>}
       </FormControl>
 

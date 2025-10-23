@@ -38,7 +38,10 @@ export const getBudgets = (month, year) => apiClient.get(`/budgets?month=${month
 export const setBudget = (budgetData) => apiClient.post('/budgets', budgetData);
 export const deleteBudget = (id) => apiClient.delete(`/budgets/${id}`);
 
-// --- ✅ NOVAS ROTAS DE TRANSAÇÕES RECORRENTES ✅ ---
+// --- ROTAS DE TRANSAÇÕES RECORRENTES ---
 export const getRecurringTransactions = () => apiClient.get('/recurring-transactions');
 export const createRecurringTransaction = (data) => apiClient.post('/recurring-transactions', data);
 export const deleteRecurringTransaction = (id) => apiClient.delete(`/recurring-transactions/${id}`);
+
+// ✅ NOVA FUNÇÃO PARA VERIFICAR LEMBRETES ✅
+export const checkRecurringNotifications = () => apiClient.post('/recurring-transactions/check-notify');
