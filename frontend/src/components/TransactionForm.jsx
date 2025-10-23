@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography } from '@mui/material';
+import { Box, TextField, Button, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel, Select, MenuItem, InputLabel, Typography, CircularProgress, InputAdornment } from '@mui/material';
 import { getCategories } from '../services/api.js';
 
 function TransactionForm({ onAddTransaction }) {
@@ -7,55 +7,87 @@ function TransactionForm({ onAddTransaction }) {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('gasto');
   const [category, setCategory] = useState('');
-  const [notes, setNotes] = useState(''); // ✅ Novo estado para as notas
+  const [notes, setNotes] = useState('');
   const [categoryList, setCategoryList] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // useEffect para ir buscar as categorias quando o componente é montado
+  // ✅ NOVO ESTADO PARA GUARDAR OS ERROS ✅
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await getCategories();
-        setCategoryList(response.data); // Guarda a lista de categorias no nosso estado
+        setCategoryList(response.data);
       } catch (error) {
-        console.error("Erro ao obter categorias para o formulário:", error);
+        console.error("Erro ao obter categorias:", error);
       }
     };
-
     fetchCategories();
-  }, []); // O array vazio [] significa que isto só corre uma vez
+  }, []);
 
-  const handleSubmit = (e) => {
+  // ✅ NOVA FUNÇÃO DE VALIDAÇÃO ✅
+  const validateForm = () => {
+    let tempErrors = {};
+    if (!description.trim()) tempErrors.description = "Descrição é obrigatória.";
+    if (amount === '' || amount === null) tempErrors.amount = "Montante é obrigatório.";
+    if (amount !== '' && isNaN(parseFloat(amount))) tempErrors.amount = "Montante deve ser um número.";
+    if (!category) tempErrors.category = "Categoria é obrigatória.";
+    
+    setErrors(tempErrors);
+    // Retorna true se não houver erros (o objeto está vazio)
+    return Object.keys(tempErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!description || !amount || !category) { // Agora a categoria também é obrigatória
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    // 1. Validar antes de submeter
+    if (!validateForm()) {
       return;
     }
-    onAddTransaction({ description, amount: parseFloat(amount), type, category, notes });
-    
-    // Limpar o formulário
-    setDescription('');
-    setAmount('');
-    setCategory('');
-    setNotes('');
+
+    setIsSubmitting(true);
+    try {
+      await onAddTransaction({ description, amount: parseFloat(amount), type, category, notes });
+      setDescription('');
+      setAmount('');
+      setCategory('');
+      setNotes('');
+      setErrors({}); // Limpa os erros em caso de sucesso
+    } catch (error) {
+      // O erro já é mostrado pelo Snackbar no DashboardPage
+      console.error('Erro no submit da transação:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 3, border: '1px solid #424242', borderRadius: '15px', mb: 4 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>Adicionar Nova Transação</Typography>
+      
+      {/* CAMPOS COM VALIDAÇÃO INTEGRADA */}
       <TextField
         label="Descrição"
         variant="outlined"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         required
+        error={!!errors.description}
+        helperText={errors.description}
       />
       <TextField
-        label="Montante (€)"
+        label="Montante"
         variant="outlined"
         type="number"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         required
+        error={!!errors.amount}
+        helperText={errors.amount}
+        InputProps={{
+          startAdornment: <InputAdornment position="start">€</InputAdornment>
+        }}
       />
       <FormControl>
         <FormLabel>Tipo</FormLabel>
@@ -64,23 +96,24 @@ function TransactionForm({ onAddTransaction }) {
           <FormControlLabel value="ganho" control={<Radio />} label="Ganho" />
         </RadioGroup>
       </FormControl>
-      <FormControl fullWidth required>
+
+      <FormControl fullWidth required error={!!errors.category}>
         <InputLabel>Categoria</InputLabel>
         <Select
           value={category}
           label="Categoria"
           onChange={(e) => setCategory(e.target.value)}
         >
-          {/* ✅ DROPDOWN DINÂMICO AQUI ✅ */}
-          {/* Criamos um MenuItem para cada categoria na nossa lista */}
           {categoryList.map((cat) => (
             <MenuItem key={cat._id} value={cat.name}>
               {cat.name}
             </MenuItem>
           ))}
         </Select>
+        {/* Mostra a mensagem de erro para o Select */}
+        {errors.category && <Typography color="error" variant="caption" sx={{ ml: 2, mt: 0.5 }}>{errors.category}</Typography>}
       </FormControl>
-      {/* ✅ NOVO CAMPO DE NOTAS ADICIONADO AQUI ✅ */}
+
       <TextField
         label="Notas (Opcional)"
         variant="outlined"
@@ -89,8 +122,9 @@ function TransactionForm({ onAddTransaction }) {
         multiline
         rows={2}
       />
-      <Button type="submit" variant="contained" color="primary">
-        Adicionar
+      
+      <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+        {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Adicionar'}
       </Button>
     </Box>
   );

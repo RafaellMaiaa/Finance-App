@@ -1,5 +1,4 @@
 // Taxas de câmbio aproximadas, usando EUR como base.
-// Numa aplicação real, isto viria de uma API de cotações.
 const EXCHANGE_RATES = {
   EUR: 1,
   USD: 1.08,
@@ -7,7 +6,7 @@ const EXCHANGE_RATES = {
   BRL: 5.5,
 };
 
-const CURRENCY_SYMBOLS = {
+export const CURRENCY_SYMBOLS = { // Exportamos para usar no formulário
   EUR: '€',
   USD: '$',
   GBP: '£',
@@ -15,10 +14,7 @@ const CURRENCY_SYMBOLS = {
 };
 
 /**
- * Formata um valor monetário para a moeda de destino.
- * @param {number} amount - O valor, sempre em EUR (a nossa moeda base na BD).
- * @param {string} currency - A moeda de destino (ex: "USD").
- * @returns {string} - O valor formatado (ex: "$ 108,00").
+ * Formata um valor monetário (em EUR) para a moeda de destino.
  */
 export const formatCurrency = (amount, currency = 'EUR') => {
   const rate = EXCHANGE_RATES[currency] || 1;
@@ -26,4 +22,17 @@ export const formatCurrency = (amount, currency = 'EUR') => {
   const convertedAmount = amount * rate;
   
   return `${symbol} ${convertedAmount.toFixed(2).replace('.', ',')}`;
+};
+
+/**
+ * ✅ NOVA FUNÇÃO ✅
+ * Converte um valor da moeda do utilizador DE VOLTA para a moeda base (EUR).
+ * @param {number} amount - O valor na moeda do utilizador (ex: 108 USD).
+ * @param {string} currency - A moeda do utilizador (ex: "USD").
+ * @returns {number} - O valor convertido para EUR (ex: 100).
+ */
+export const convertToBaseCurrency = (amount, currency = 'EUR') => {
+  const rate = EXCHANGE_RATES[currency] || 1;
+  if (rate === 0) return amount; // Evita divisão por zero
+  return amount / rate;
 };
