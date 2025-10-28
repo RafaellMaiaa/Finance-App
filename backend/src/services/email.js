@@ -1,37 +1,28 @@
-import axios from 'axios';
+// Ficheiro: backend/src/services/email.js (Versão SendGrid)
+import sgMail from '@sendgrid/mail';
 
-// Agora a função chama-se 'sendEmail' para ser mais genérica
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 export const sendEmail = async (options) => {
-  console.log(`--- A tentar enviar email para: ${options.email} via API HTTP ---`);
-  console.log(`--- Assunto: ${options.subject} ---`); // Adicionamos um log para o assunto
+  console.log(`--- A tentar enviar email para: ${options.email} via SendGrid ---`);
+  console.log(`--- Assunto: ${options.subject} ---`);
 
-  const emailPayload = {
-    from: 'Finance Flow <onboarding@resend.dev>', // Podemos manter este remetente por agora
+  const msg = {
     to: options.email,
-    
-    // ✅ USA O ASSUNTO E HTML RECEBIDOS ✅
-    // Se não forem passados, usa os valores padrão do email de login (fallback)
-    subject: options.subject || 'O seu link para entrar na Finance App',
-    html: options.html || `<p>Olá!</p><p>Para entrar na sua conta, por favor clique neste link. Ele é válido por 10 minutos.</p><a href="${options.url}">Entrar na Aplicação</a>`,
+    from: process.env.SENDGRID_FROM_EMAIL || 'Finance Flow <onboarding@resend.dev>',
+    subject: options.subject || 'Mensagem da Finance Flow',
+    html: options.html || `<p>Olá!</p><p>Para entrar na sua conta, por favor clique neste link. Ele é válido por 10 minutos.</p><a href="${options.url}">${options.url || 'Abrir App'}</a>`,
   };
 
   try {
-    const response = await axios.post('https://api.resend.com/emails', emailPayload, {
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    console.log('✅ Email enviado com sucesso pela API do Resend. ID:', response.data.id);
-    return response.data;
-
+    const response = await sgMail.send(msg);
+    console.log('✅ Email enviado com sucesso pelo SendGrid.', response?.[0]?.statusCode || '');
+    return response;
   } catch (error) {
-    // Mostra mais detalhes do erro, se disponíveis
-    const errorDetails = error.response ? error.response.data : error.message;
-    console.error('❌ ERRO ao enviar email pela API do Resend:', errorDetails);
-    
-    // Re-lança o erro para que o controller saiba que falhou
-    throw new Error(`Falha ao enviar email: ${errorDetails.message || error.message}`); 
+    console.error('❌ ERRO ao enviar email pelo SendGrid:', error);
+    if (error.response && error.response.body) {
+      console.error('SendGrid response body:', error.response.body);
+    }
+    throw error;
   }
 };
