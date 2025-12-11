@@ -1,75 +1,111 @@
 # Finance Flow 🌊
 
-Bem-vindo ao **Finance Flow**, uma aplicação moderna e inteligente de finanças pessoais! Construída com o robusto MERN stack (MongoDB, Express, React, Node.js), esta aplicação permite-lhe gerir as suas transações, definir orçamentos, analisar os seus gastos com gráficos interativos e obter *insights* personalizados através de um assistente IA integrado com a API Gemini da Google.
+> **Gestão Financeira Inteligente com Assistente IA**
+
+Bem-vindo ao **Finance Flow**, uma aplicação *full-stack* moderna destinada à gestão de finanças pessoais. Construída sobre uma arquitetura Cliente-Servidor desacoplada (MERN Stack), esta aplicação combina a simplicidade de registo financeiro com a análise de dados avançada através de Inteligência Artificial.
 
 ## ✨ Funcionalidades Principais
 
-* **Autenticação Segura e Simples:** Login rápido e sem password através do **Google OAuth 2.0**.
-* **Gestão Completa de Transações:**
-    * Adicione ganhos e gastos com descrição, valor, tipo, categoria e notas opcionais.
-    * **Suporte Multi-Moeda:** Insira valores na sua moeda local (EUR, USD, GBP, BRL) - a aplicação converte automaticamente para a moeda base (EUR).
-    * Visualize um histórico detalhado das suas transações.
-    * Apague transações facilmente.
-* **Categorias Personalizadas:** Crie, edite e apague as suas próprias categorias.
-* **Orçamentos Mensais:**
-    * Defina limites de gastos mensais por categoria.
-    * Visualize o seu progresso com barras de progresso.
-* **Transações Recorrentes:**
-    * Crie "modelos" para despesas ou receitas mensais.
-    * Gere manualmente as transações reais do mês com base nestes modelos.
-    * **Lembretes por Email:** Ative uma verificação manual para receber emails de lembrete sobre transações recorrentes por pagar/receber nos próximos dias (requer configuração de um serviço de email como SendGrid).
-* **Assistente Financeiro IA ("Flow"):**
-    * Faça perguntas em linguagem natural sobre as suas finanças.
-    * O assistente "Flow" (Gemini API) analisa os seus dados reais e responde de forma amigável e formatada.
-    * Resposta personalizada sobre o criador da aplicação.
-* **Relatórios Detalhados:**
-    * Visualize resumos de ganhos, gastos e saldo para o período selecionado.
-    * **Filtros Avançados:** Filtre por "Este Mês", "Mês Passado", "Tudo" ou escolha um **intervalo de datas personalizado**.
-    * **Gráficos Interativos:** Analise a distribuição dos seus gastos e ganhos com gráficos circulares.
-    * **Exportar para PDF:** Descarregue um relatório completo do período selecionado em formato PDF.
-* **Interface Moderna e Personalizável:**
-    * Design limpo e responsivo (Material-UI).
-    * **Modo Claro / Escuro**.
-    * Layout persistente com cabeçalho e menu lateral.
-    * **Feedback ao Utilizador:** Notificações (Snackbars), indicadores de "a carregar" e validação de formulários clara.
-* **Gestão de Perfil:** Atualize o seu nome e escolha a sua **moeda preferida**.
+### 🔐 Autenticação e Perfil
+* **Login Sem Passwords:** Autenticação segura e rápida via **Google OAuth 2.0**.
+* **Gestão de Sessão:** Sistema *stateless* seguro utilizando JSON Web Tokens (JWT).
+* **Preferência de Moeda:** Escolha a sua moeda base (EUR, USD, BRL, etc.).
+    * *Nota de Integridade:* Para garantir a consistência dos dados, a alteração da moeda executa uma limpeza automática do histórico, evitando erros de câmbio antigos.
+
+### 💸 Gestão de Transações
+* **CRUD Completo:** Adicione ganhos e despesas com descrição, valor, categoria e notas.
+* **Histórico Detalhado:** Visualize as suas transações com a **data específica** da ocorrência, permitindo um controlo temporal exato.
+* **Categorias Personalizadas:** Crie, edite e elimine as suas próprias categorias (ex: "Jantares", "Freelance").
+
+### 🔄 Transações Recorrentes Inteligentes (Novo)
+* **Periodicidade Flexível:** Configure despesas ou ganhos fixos com frequência personalizada:
+    * Diária, Semanal, Mensal, Semestral ou Anual.
+* **Lógica Anti-Duplicação:** O sistema possui um algoritmo de verificação que impede que a mesma transação recorrente seja criada duas vezes no mesmo período, garantindo a integridade do saldo.
+* **Processamento Automático:** Verificação automática de datas para lançar transações pendentes.
+
+### 🤖 Assistente Financeiro IA ("Flow")
+* **Integração Google Gemini:** Um *chatbot* integrado que conhece os seus dados financeiros.
+* **Perguntas em Linguagem Natural:** Pergunte *"Quanto gastei em restaurantes este mês?"* ou *"Como posso poupar mais?"*.
+* **Contexto Real:** A IA analisa as suas transações e orçamentos em tempo real para dar respostas precisas e formatadas.
+
+### 📊 Relatórios e Visualização
+* **Dashboard Interativo:** Resumo imediato de saldo, receitas e despesas.
+* **Orçamentos Visuais:** Barras de progresso para acompanhar limites de gastos por categoria.
+* **Filtros Temporais:** Filtre por "Este Mês", "Mês Passado" ou intervalos de datas personalizados.
+* **Exportação Profissional:** Gere relatórios completos em **PDF** (via jsPDF) com tabelas detalhadas do período selecionado.
+* **Gráficos Dinâmicos:** Visualização da distribuição de gastos (Recharts).
+
+### 📧 Notificações
+* **Integração SendGrid:** Receba lembretes por email sobre transações recorrentes ou avisos importantes.
 
 ## 🚀 Tecnologias Utilizadas
 
-* **Frontend:** React (Vite), React Router, Material-UI, Axios, Recharts, jsPDF, jsPDF-AutoTable
-* **Backend:** Node.js, Express.js, MongoDB (Mongoose), JWT, Passport.js (Google OAuth 2.0), Google Generative AI SDK, SendGrid Mail SDK
-* **Base de Dados:** MongoDB
-* **Serviço de Email:** SendGrid (para lembretes)
+### Frontend (Cliente)
+* **Core:** React.js (Vite)
+* **UI/UX:** Material-UI (MUI), Lucide React (Ícones)
+* **Dados & Gráficos:** Axios, Recharts
+* **Utilitários:** jsPDF (Relatórios), Date-fns
+
+### Backend (Servidor)
+* **Runtime:** Node.js & Express.js
+* **Base de Dados:** MongoDB & Mongoose (ODM)
+* **Segurança:** Passport.js (Google Strategy), JWT, CORS
+* **Serviços Externos:**
+    * Google Generative AI SDK (Gemini)
+    * SendGrid Mail SDK
 
 ## 🛠️ Como Executar o Projeto Localmente
 
 ### Pré-requisitos
 * Node.js (v18+)
-* NPM
-* MongoDB a correr localmente ou Atlas connection string
-* Credenciais Google Cloud (Client ID & Secret)
-* Chave API Google Gemini
-* Chave API SendGrid ("Full Access") e Email Verificado ("Single Sender")
+* MongoDB (Local ou Atlas)
+* Conta Google Cloud (para OAuth e Gemini API)
+* Conta SendGrid (opcional, para emails)
 
-### Backend
-1.  `cd backend`
-2.  `npm install`
-3.  Crie `.env` e preencha as variáveis (veja exemplo abaixo).
-4.  `npm run dev`
+### 1. Configuração do Backend
+```bash
+cd backend
+npm install
+Crie um ficheiro .env na raiz da pasta backend:
 
-### Frontend
-1.  `cd frontend` (noutro terminal)
-2.  `npm install`
-3.  `npm run dev`
-4.  Abra `http://localhost:5173`
+Fragmento do código
 
-### Exemplo `.env` (backend)
-```env
-GEMINI_API_KEY=SUA_CHAVE_GEMINI
-JWT_SECRET=SEU_SEGREDO_JWT
+PORT=3001
+MONGODB_URI=sua_connection_string_mongodb
+JWT_SECRET=seu_segredo_super_seguro
 FRONTEND_URL=http://localhost:5173
-GOOGLE_CLIENT_ID=SEU_GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET=SEU_GOOGLE_CLIENT_SECRET
+
+# Google Auth & AI
+GOOGLE_CLIENT_ID=seu_google_client_id
+GOOGLE_CLIENT_SECRET=seu_google_client_secret
+GEMINI_API_KEY=sua_chave_api_gemini
+
+# Email (Opcional)
+SENDGRID_API_KEY=sua_chave_sendgrid
+SENDGRID_FROM_EMAIL=seu_email_verificado
+Inicie o servidor:
+
+Bash
+
+npm run dev
+2. Configuração do Frontend
+Bash
+
+cd frontend
+npm install
+Inicie a aplicação:
+
+Bash
+
+npm run dev
+Aceda a http://localhost:5173.
+
+🔮 Roadmap & Notas
+Privacidade da IA: Atualmente, o assistente utiliza a API Cloud do Google Gemini. Em versões futuras (produção), planeia-se a migração para um LLM Local (ex: Llama) para garantir soberania total dos dados.
+
+Open Banking: Planeada a integração com APIs bancárias para importação automática de transações.
+
+Desenvolvido por Rafael Maia no âmbito do Projeto de Programação de Sistemas de Informação - ESTGA/UA.
 MONGODB_URI=mongodb://127.0.0.1:27017/finance-app-db
 PORT=3001
 SENDGRID_API_KEY=SG.SUA_CHAVE_SENDGRID
